@@ -4,13 +4,13 @@
   var PROXY = 'https://api.allorigins.win/raw?url=';
   var REFRESH_INTERVAL = 60000;
 
-  // --- Default holdings ---
+  // --- Default holdings with logo URLs ---
   var DEFAULT_CRYPTO = [
-    { id: 'bitcoin',  name: 'Bitcoin',  ticker: 'BTC', qty: 0 },
-    { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0 },
-    { id: 'solana',   name: 'Solana',   ticker: 'SOL', qty: 0 },
-    { id: 'cardano',  name: 'Cardano',  ticker: 'ADA', qty: 0 },
-    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0 }
+    { id: 'bitcoin',  name: 'Bitcoin',  ticker: 'BTC', qty: 0, image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
+    { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0, image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
+    { id: 'solana',   name: 'Solana',   ticker: 'SOL', qty: 0, image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
+    { id: 'cardano',  name: 'Cardano',  ticker: 'ADA', qty: 0, image: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
+    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0, image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' }
   ];
 
   var DEFAULT_STOCKS = [
@@ -42,10 +42,11 @@
   // --- Price caches ---
   var cryptoPrices = {};  // id -> { price, change }
   var stockPrices = {};   // symbol -> { price, change }
+  var cryptoImages = {};  // id -> image URL (fetched from API)
 
   // --- Formatters ---
   function fmtPrice(n, decimals) {
-    if (n == null || isNaN(n)) return '—';
+    if (n == null || isNaN(n)) return '\u2014';
     return '$' + Number(n).toLocaleString('en-US', {
       minimumFractionDigits: decimals,
       maximumFractionDigits: decimals
@@ -53,12 +54,69 @@
   }
 
   function fmtChange(pct) {
-    if (pct == null || isNaN(pct)) return '—';
+    if (pct == null || isNaN(pct)) return '\u2014';
     var sign = pct >= 0 ? '+' : '';
     return sign + pct.toFixed(2) + '%';
   }
 
-  // --- Fetch crypto prices from CoinGecko ---
+  // --- Generate color for ticker (fallback) ---
+  function tickerColor(str) {
+    var hash = 0;
+    for (var i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    var h = Math.abs(hash) % 360;
+    return 'hsl(' + h + ', 55%, 45%)';
+  }
+
+  // --- Stock logo URL ---
+  function stockLogoUrl(symbol) {
+    return 'https://logo.clearbit.com/' + stockDomain(symbol);
+  }
+
+  function stockDomain(symbol) {
+    var domains = {
+      'AAPL': 'apple.com',
+      'NVDA': 'nvidia.com',
+      'TSLA': 'tesla.com',
+      'GOOGL': 'google.com',
+      'GOOG': 'google.com',
+      'AMZN': 'amazon.com',
+      'MSFT': 'microsoft.com',
+      'META': 'meta.com',
+      'NFLX': 'netflix.com',
+      'AMD': 'amd.com',
+      'INTC': 'intel.com',
+      'DIS': 'disney.com',
+      'PYPL': 'paypal.com',
+      'UBER': 'uber.com',
+      'SHOP': 'shopify.com',
+      'SQ': 'squareup.com',
+      'SPOT': 'spotify.com',
+      'COIN': 'coinbase.com',
+      'BA': 'boeing.com',
+      'JPM': 'jpmorganchase.com',
+      'V': 'visa.com',
+      'MA': 'mastercard.com',
+      'WMT': 'walmart.com',
+      'KO': 'coca-cola.com',
+      'PEP': 'pepsico.com',
+      'JNJ': 'jnj.com',
+      'PG': 'pg.com',
+      'XOM': 'exxonmobil.com',
+      'CVX': 'chevron.com',
+      'UNH': 'unitedhealthgroup.com',
+      'HD': 'homedepot.com',
+      'CRM': 'salesforce.com',
+      'ORCL': 'oracle.com',
+      'ADBE': 'adobe.com',
+      'CSCO': 'cisco.com',
+      'IBM': 'ibm.com'
+    };
+    return domains[symbol.toUpperCase()] || (symbol.toLowerCase() + '.com');
+  }
+
+  // --- Fetch crypto prices + images from CoinGecko ---
   async function fetchCryptoPrices() {
     if (cryptoHoldings.length === 0) return;
     var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
@@ -75,7 +133,33 @@
         };
       }
     } catch (e) { /* silent */ }
+
+    // Fetch images for any coins we don't have images for yet
+    await fetchCryptoImages();
     renderCrypto();
+  }
+
+  async function fetchCryptoImages() {
+    var missing = cryptoHoldings.filter(function (h) {
+      return !h.image && !cryptoImages[h.id];
+    });
+    if (missing.length === 0) return;
+
+    var ids = missing.map(function (h) { return h.id; }).join(',');
+    try {
+      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
+        + '&per_page=50&page=1';
+      var res = await fetch(url);
+      if (!res.ok) return;
+      var data = await res.json();
+      for (var i = 0; i < data.length; i++) {
+        cryptoImages[data[i].id] = data[i].image;
+      }
+    } catch (e) { /* silent */ }
+  }
+
+  function getCryptoImage(holding) {
+    return holding.image || cryptoImages[holding.id] || '';
   }
 
   // --- Fetch stock prices from Yahoo Finance ---
@@ -104,14 +188,45 @@
     } catch (e) { /* silent */ }
   }
 
-  // --- Generate color for ticker ---
-  function tickerColor(str) {
-    var hash = 0;
-    for (var i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  // --- Build logo HTML ---
+  function cryptoLogoHtml(holding) {
+    var imgUrl = getCryptoImage(holding);
+    if (imgUrl) {
+      return '<div class="asset-logo">'
+        + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.ticker) + '" width="40" height="40" style="border-radius:50%;display:block;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.ticker) + '\'">'
+        + '</div>';
     }
-    var h = Math.abs(hash) % 360;
-    return 'hsl(' + h + ', 55%, 45%)';
+    return fallbackLogoHtml(holding.ticker);
+  }
+
+  function stockLogoHtml(holding) {
+    var imgUrl = stockLogoUrl(holding.symbol);
+    return '<div class="asset-logo">'
+      + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.symbol) + '" width="40" height="40" style="border-radius:50%;display:block;object-fit:contain;background:#fff;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.symbol) + '\'">'
+      + '</div>';
+  }
+
+  function fallbackLogoHtml(ticker) {
+    return '<div class=\\"asset-logo-gen\\" style=\\"background:' + tickerColor(ticker) + '\\">'
+      + ticker.substring(0, 3)
+      + '</div>';
+  }
+
+  // For inline use (not inside onerror)
+  function fallbackLogoDirect(ticker) {
+    return '<div class="asset-logo-gen" style="background:' + tickerColor(ticker) + '">'
+      + escHtml(ticker.substring(0, 3))
+      + '</div>';
+  }
+
+  function escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function escAttr(str) {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   // --- Render functions ---
@@ -119,22 +234,29 @@
     var list = document.getElementById('crypto-holdings-list');
     if (!list) return;
 
-    // Keep add form if open
     var html = '';
     for (var i = 0; i < cryptoHoldings.length; i++) {
       var h = cryptoHoldings[i];
       var p = cryptoPrices[h.id];
-      var price = p ? fmtPrice(p.price, p.price >= 100 ? 2 : 4) : '—';
-      var change = p ? fmtChange(p.change) : '—';
+      var price = p ? fmtPrice(p.price, p.price >= 100 ? 2 : 4) : '\u2014';
+      var change = p ? fmtChange(p.change) : '\u2014';
       var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
       var value = (p && h.qty > 0) ? fmtPrice(p.price * h.qty, 2) : price;
       var qtyLabel = h.qty > 0 ? h.qty + ' ' + h.ticker : '';
 
+      var imgUrl = getCryptoImage(h);
+      var logoHtml;
+      if (imgUrl) {
+        logoHtml = '<div class="asset-logo">'
+          + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" width="40" height="40">'
+          + '</div>';
+      } else {
+        logoHtml = fallbackLogoDirect(h.ticker);
+      }
+
       html += '<div class="holding-item">'
         + '<div class="holding-left">'
-        + '<div class="asset-logo-gen" style="background:' + tickerColor(h.ticker) + '">'
-        + h.ticker.substring(0, 3)
-        + '</div>'
+        + logoHtml
         + '<div class="asset-info">'
         + '<span class="asset-name">' + escHtml(h.name) + '</span>'
         + '<span class="asset-ticker">' + escHtml(h.ticker)
@@ -150,7 +272,12 @@
     }
     list.innerHTML = html;
 
-    // Attach remove handlers
+    // Handle broken images — swap to fallback
+    var imgs = list.querySelectorAll('.asset-logo img');
+    for (var k = 0; k < imgs.length; k++) {
+      imgs[k].addEventListener('error', handleImgError);
+    }
+
     var removeBtns = list.querySelectorAll('.remove-holding-btn');
     for (var j = 0; j < removeBtns.length; j++) {
       removeBtns[j].addEventListener('click', handleRemove);
@@ -165,17 +292,20 @@
     for (var i = 0; i < stockHoldings.length; i++) {
       var h = stockHoldings[i];
       var p = stockPrices[h.symbol];
-      var price = p ? fmtPrice(p.price, 2) : '—';
-      var change = p ? fmtChange(p.change) : '—';
+      var price = p ? fmtPrice(p.price, 2) : '\u2014';
+      var change = p ? fmtChange(p.change) : '\u2014';
       var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
       var value = (p && h.qty > 0) ? fmtPrice(p.price * h.qty, 2) : price;
       var qtyLabel = h.qty > 0 ? h.qty + ' shares' : '';
 
+      var logoUrl = stockLogoUrl(h.symbol);
+      var logoHtml = '<div class="asset-logo">'
+        + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(h.symbol) + '" width="40" height="40">'
+        + '</div>';
+
       html += '<div class="holding-item">'
         + '<div class="holding-left">'
-        + '<div class="asset-logo-gen" style="background:' + tickerColor(h.symbol) + '">'
-        + h.symbol.substring(0, 3)
-        + '</div>'
+        + logoHtml
         + '<div class="asset-info">'
         + '<span class="asset-name">' + escHtml(h.name) + '</span>'
         + '<span class="asset-ticker">' + escHtml(h.symbol)
@@ -191,16 +321,27 @@
     }
     list.innerHTML = html;
 
+    // Handle broken images — swap to fallback
+    var imgs = list.querySelectorAll('.asset-logo img');
+    for (var k = 0; k < imgs.length; k++) {
+      imgs[k].addEventListener('error', handleImgError);
+    }
+
     var removeBtns = list.querySelectorAll('.remove-holding-btn');
     for (var j = 0; j < removeBtns.length; j++) {
       removeBtns[j].addEventListener('click', handleRemove);
     }
   }
 
-  function escHtml(str) {
-    var div = document.createElement('div');
-    div.textContent = str;
-    return div.innerHTML;
+  function handleImgError(e) {
+    var img = e.target;
+    var ticker = img.alt || '???';
+    var wrapper = img.parentNode;
+    var fallback = document.createElement('div');
+    fallback.className = 'asset-logo-gen';
+    fallback.style.background = tickerColor(ticker);
+    fallback.textContent = ticker.substring(0, 3);
+    wrapper.parentNode.replaceChild(fallback, wrapper);
   }
 
   // --- Add / Remove handlers ---
@@ -253,14 +394,12 @@
       });
       saveHoldings('mm_crypto', cryptoHoldings);
 
-      // Clear form
       idInput.value = '';
       nameInput.value = '';
       tickerInput.value = '';
       qtyInput.value = '';
       form.classList.remove('show');
 
-      // Fetch & render
       fetchCryptoPrices();
     });
   }
@@ -325,3 +464,5 @@
     init();
   }
 })();
+
+
