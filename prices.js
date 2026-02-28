@@ -1,147 +1,146 @@
-// ============================================================
-//  ★ MANUAL DATA — EDIT THIS SECTION DAILY ★
-//  For stocks, indices, commodities (anything not crypto)
-//  Change the numbers, save file, refresh browser
-// ============================================================
-const MANUAL_DATA = {
-  // Top widget cards
-  nvda:  { price: 135.50,  change: 2.34  },   // NVIDIA widget
-  spx:   { price: 5234.18, change: 0.45  },   // S&P 500 widget
-  gold:  { price: 2345.60, change: 0.32  },   // Gold widget
+(function () {
+  'use strict';
 
-  // Stock holdings section
-  aapl:  { price: 189.84,  change: 0.52  },   // Apple
-  tsla:  { price: 248.50,  change: -1.23 },   // Tesla (negative = red)
-  googl: { price: 141.80,  change: 0.87  },   // Alphabet
-  amzn:  { price: 185.60,  change: 1.15  },   // Amazon
-};
+  const REFRESH_INTERVAL = 60000; // 60 seconds
+  const PROXY = 'https://api.allorigins.win/raw?url=';
 
-// ============================================================
-//  CRYPTO CONFIG — Auto-fetched from CoinGecko every 60 sec
-//  No need to touch this. Prices update automatically.
-// ============================================================
-const CRYPTO_MAP = {
-  bitcoin:   'btc',
-  ethereum:  'eth',
-  solana:    'sol',
-  cardano:   'ada',
-  ripple:    'xrp',
-};
-
-const REFRESH_SECONDS = 60;
-
-// ============================================================
-//  ENGINE — Do not edit below unless you know JavaScript
-// ============================================================
-let cryptoData = {};
-
-function fmtPrice(p) {
-  if (p >= 1) return '$' + p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return '$' + p.toFixed(4);
-}
-
-function fmtChange(c) {
-  return (c >= 0 ? '+' : '') + c.toFixed(2) + '%';
-}
-
-function updateWidget(key, price, change) {
-  var pe = document.getElementById('price-' + key);
-  var ce = document.getElementById('change-' + key);
-  if (pe) pe.textContent = fmtPrice(price);
-  if (ce) {
-    ce.textContent = fmtChange(change);
-    ce.className = 'widget-change ' + (change >= 0 ? 'positive' : 'negative');
+  // --- Formatters ---
+  function fmtPrice(n, decimals) {
+    if (n == null || isNaN(n)) return '—';
+    return '$' + Number(n).toLocaleString('en-US', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    });
   }
-}
 
-function updateHolding(ticker, price, change) {
-  document.querySelectorAll('.asset-ticker').forEach(function(el) {
-    if (el.textContent.trim().toUpperCase() === ticker.toUpperCase()) {
-      var item = el.closest('.holding-item');
-      if (!item) return;
-      var ve = item.querySelector('.asset-value');
-      var ce = item.querySelector('.asset-change');
-      if (ve) ve.textContent = fmtPrice(price);
-      if (ce) {
-        ce.textContent = fmtChange(change);
-        ce.className = 'asset-change ' + (change >= 0 ? 'positive' : 'negative');
-      }
-    }
-  });
-}
-
-function showStatus(msg) {
-  var el = document.getElementById('api-status');
-  if (!el) {
-    el = document.createElement('div');
-    el.id = 'api-status';
-    el.style.cssText = 'position:fixed;bottom:12px;right:16px;font-size:11px;color:#888;background:rgba(255,255,255,0.9);padding:4px 10px;border-radius:6px;border:1px solid #e5e7eb;z-index:999;';
-    document.body.appendChild(el);
+  function fmtChange(pct) {
+    if (pct == null || isNaN(pct)) return '—';
+    const sign = pct >= 0 ? '+' : '';
+    return sign + pct.toFixed(2) + '%';
   }
-  el.textContent = msg;
-}
 
-async function fetchCrypto() {
-  var ids = Object.keys(CRYPTO_MAP).join(',');
-  var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true';
-  try {
-    var res = await fetch(url);
-    if (!res.ok) throw new Error('Status ' + res.status);
-    var data = await res.json();
-    for (var cgId in CRYPTO_MAP) {
-      if (data[cgId]) {
-        var ticker = CRYPTO_MAP[cgId];
-        cryptoData[ticker] = {
-          price: data[cgId].usd,
-          change: data[cgId].usd_24h_change || 0
-        };
-      }
-    }
-    var t = new Date();
-    showStatus('Live \u2022 Updated ' + t.toLocaleTimeString());
-    console.log('[CoinGecko] Prices updated at ' + t.toLocaleTimeString());
-  } catch (e) {
-    showStatus('API error \u2022 Retrying...');
-    console.warn('[CoinGecko] Fetch failed:', e.message);
+  function applyChange(el, pct) {
+    el.textContent = fmtChange(pct);
+    el.className = 'widget-change ' + (pct >= 0 ? 'positive' : 'negative');
   }
-}
 
-function applyAll() {
-  // Crypto top widget (BTC)
-  if (cryptoData.btc) updateWidget('btc', cryptoData.btc.price, cryptoData.btc.change);
+  // --- Sparkline renderer (pure CSS bars) ---
+  function renderSparkline(containerId, prices) {
+    const el = document.getElementById(containerId);
+    if (!el || !prices || prices.length < 2) return;
 
-  // Manual top widgets
-  if (MANUAL_DATA.nvda) updateWidget('nvda', MANUAL_DATA.nvda.price, MANUAL_DATA.nvda.change);
-  if (MANUAL_DATA.spx)  updateWidget('spx',  MANUAL_DATA.spx.price,  MANUAL_DATA.spx.change);
-  if (MANUAL_DATA.gold) updateWidget('gold', MANUAL_DATA.gold.price, MANUAL_DATA.gold.change);
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const range = max - min || 1;
+    const isUp = prices[prices.length - 1] >= prices[0];
 
-  // Crypto holdings
-  for (var cgId in CRYPTO_MAP) {
-    var ticker = CRYPTO_MAP[cgId];
-    if (cryptoData[ticker]) {
-      updateHolding(ticker, cryptoData[ticker].price, cryptoData[ticker].change);
+    el.innerHTML = '';
+    // Sample down to ~20 bars max
+    const step = Math.max(1, Math.floor(prices.length / 20));
+    for (let i = 0; i < prices.length; i += step) {
+      const pct = ((prices[i] - min) / range) * 100;
+      const bar = document.createElement('span');
+      bar.className = 'spark-bar';
+      bar.style.height = Math.max(8, pct) + '%';
+      bar.style.background = isUp
+        ? 'rgba(34,197,94,0.5)'
+        : 'rgba(239,68,68,0.5)';
+      el.appendChild(bar);
     }
   }
 
-  // Stock holdings
-  var stocks = { aapl:'AAPL', nvda:'NVDA', tsla:'TSLA', googl:'GOOGL', amzn:'AMZN' };
-  for (var key in stocks) {
-    if (MANUAL_DATA[key]) {
-      updateHolding(stocks[key], MANUAL_DATA[key].price, MANUAL_DATA[key].change);
+  // --- CoinGecko: Bitcoin ---
+  async function fetchBTC() {
+    try {
+      const url = 'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      const price = data.bitcoin.usd;
+      const change = data.bitcoin.usd_24h_change;
+      document.getElementById('price-btc').textContent = fmtPrice(price, 0);
+      applyChange(document.getElementById('change-btc'), change);
+    } catch {
+      document.getElementById('price-btc').textContent = '—';
     }
   }
-}
 
-async function init() {
-  showStatus('Loading prices...');
-  applyAll();                    // Show manual data immediately
-  await fetchCrypto();           // Fetch live crypto
-  applyAll();                    // Update with live crypto
+  // Sparkline for BTC (7-day hourly from CoinGecko)
+  async function fetchBTCSpark() {
+    try {
+      const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7';
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      const data = await res.json();
+      const prices = data.prices.map(function (p) { return p[1]; });
+      renderSparkline('spark-btc', prices);
+    } catch {
+      // silent
+    }
+  }
 
-  setInterval(async function() {
-    await fetchCrypto();
-    applyAll();
-  }, REFRESH_SECONDS * 1000);
-}
+  // --- Yahoo Finance via allorigins proxy ---
+  async function fetchYahoo(symbol) {
+    const yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+      + encodeURIComponent(symbol) + '?range=5d&interval=1h';
+    const url = PROXY + encodeURIComponent(yahooUrl);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(res.status);
+    const data = await res.json();
+    const result = data.chart.result[0];
+    const meta = result.meta;
+    const price = meta.regularMarketPrice;
+    const prevClose = meta.chartPreviousClose || meta.previousClose;
+    const changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
+    const closes = result.indicators.quote[0].close.filter(function (v) {
+      return v != null;
+    });
+    return { price: price, changePct: changePct, closes: closes };
+  }
 
-init();
+  async function fetchNVDA() {
+    try {
+      const d = await fetchYahoo('NVDA');
+      document.getElementById('price-nvda').textContent = fmtPrice(d.price, 2);
+      applyChange(document.getElementById('change-nvda'), d.changePct);
+      renderSparkline('spark-nvda', d.closes);
+    } catch {
+      document.getElementById('price-nvda').textContent = '—';
+    }
+  }
+
+  async function fetchSPX() {
+    try {
+      const d = await fetchYahoo('^GSPC');
+      document.getElementById('price-spx').textContent = fmtPrice(d.price, 2);
+      applyChange(document.getElementById('change-spx'), d.changePct);
+      renderSparkline('spark-spx', d.closes);
+    } catch {
+      document.getElementById('price-spx').textContent = '—';
+    }
+  }
+
+  async function fetchGold() {
+    try {
+      const d = await fetchYahoo('GC=F');
+      document.getElementById('price-gold').textContent = fmtPrice(d.price, 2);
+      applyChange(document.getElementById('change-gold'), d.changePct);
+      renderSparkline('spark-gold', d.closes);
+    } catch {
+      document.getElementById('price-gold').textContent = '—';
+    }
+  }
+
+  // --- Init ---
+  function fetchAll() {
+    fetchBTC();
+    fetchBTCSpark();
+    fetchNVDA();
+    fetchSPX();
+    fetchGold();
+  }
+
+  fetchAll();
+  setInterval(fetchAll, REFRESH_INTERVAL);
+})();
+
