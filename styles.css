@@ -402,6 +402,82 @@ body {
   color: var(--navy-900);
 }
 
+/* ===== Editable Stat Cards ===== */
+.edit-cash-btn {
+  padding: 3px 12px;
+  border-radius: 4px;
+  border: 1px solid var(--gray-200);
+  background: var(--gray-50);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.edit-cash-btn:hover {
+  background: var(--navy-500);
+  color: var(--white);
+  border-color: var(--navy-500);
+}
+
+.inline-edit-form {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: 10px;
+}
+
+.inline-edit-form.show {
+  display: flex;
+}
+
+.inline-edit-form label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--navy-900);
+}
+
+.inline-edit-form input {
+  padding: 9px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  font-size: 14px;
+  background: var(--gray-50);
+  color: var(--navy-900);
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.inline-edit-form input:focus {
+  border-color: var(--navy-500);
+}
+
+.inline-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-cancel-btn {
+  padding: 9px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  color: var(--gray-500);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edit-cancel-btn:hover {
+  background: var(--gray-50);
+}
+
 /* ===== Charts Row ===== */
 .charts-row {
   display: grid;
@@ -946,4 +1022,5 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
 
