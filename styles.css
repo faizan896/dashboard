@@ -39,8 +39,8 @@ body {
 /* ===== Sidebar ===== */
 .sidebar {
   width: var(--sidebar-width);
-  background: var(--navy-900);
-  color: var(--white);
+  background: #1a1032;
+  color: #ffffff;
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -62,13 +62,14 @@ body {
 .brand-icon {
   width: 32px;
   height: 32px;
-  color: var(--navy-500);
+  color: #b388ff;
 }
 
 .brand-name {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: -0.02em;
+  color: #ffffff;
 }
 
 .sidebar-nav {
@@ -90,7 +91,7 @@ body {
   gap: 12px;
   padding: 10px 12px;
   border-radius: 8px;
-  color: var(--gray-400);
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
@@ -98,13 +99,13 @@ body {
 }
 
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--white);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .nav-link.active {
-  background: var(--navy-700);
-  color: var(--white);
+  background: rgba(139, 92, 246, 0.3);
+  color: #ffffff;
 }
 
 .nav-icon {
@@ -118,7 +119,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--gray-500);
+  color: rgba(255, 255, 255, 0.4);
   padding: 24px 12px 8px;
 }
 
@@ -1022,6 +1023,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
 
 
 
