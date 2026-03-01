@@ -951,6 +951,111 @@ body {
   color: var(--white);
 }
 
+/* ===== Expense Entry Form ===== */
+.expense-add-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.exp-field {
+  padding: 9px 12px;
+  border: 1px solid var(--gray-200);
+  border-radius: 6px;
+  font-size: 13px;
+  background: var(--gray-50);
+  color: var(--navy-900);
+  outline: none;
+  transition: border-color 0.15s;
+  font-family: inherit;
+}
+
+.exp-field:focus {
+  border-color: var(--navy-500);
+}
+
+input[type="month"].exp-field {
+  min-width: 140px;
+}
+
+select.exp-field {
+  min-width: 130px;
+  cursor: pointer;
+}
+
+input[type="number"].exp-field {
+  min-width: 120px;
+  flex: 1;
+}
+
+/* ===== Expense Entry List ===== */
+.expense-entries-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.expense-entry-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--gray-100);
+  font-size: 13px;
+}
+
+.expense-entry-item:last-child {
+  border-bottom: none;
+}
+
+.exp-entry-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.exp-entry-month {
+  color: var(--gray-400);
+  min-width: 70px;
+}
+
+.exp-entry-cat {
+  color: var(--navy-900);
+  font-weight: 500;
+  flex: 1;
+}
+
+.exp-entry-amount {
+  font-weight: 700;
+  color: var(--navy-900);
+  min-width: 80px;
+  text-align: right;
+}
+
+.exp-entry-del {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--gray-200);
+  background: var(--white);
+  color: var(--gray-400);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.exp-entry-del:hover {
+  background: var(--red-500);
+  border-color: var(--red-500);
+  color: #fff;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .price-widgets {
@@ -1023,6 +1128,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
 
 
 
