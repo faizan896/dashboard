@@ -24,11 +24,11 @@
   ];
 
   var categories = [
-    { key: 'housing',       label: 'Housing',       color: '#0f2040' },
-    { key: 'food',          label: 'Food',          color: '#2563eb' },
-    { key: 'transport',     label: 'Transport',     color: '#3b82f6' },
-    { key: 'utilities',     label: 'Utilities',     color: '#60a5fa' },
-    { key: 'entertainment', label: 'Entertainment', color: '#93c5fd' },
+    { key: 'housing',       label: 'Housing',       color: '#7c3aed' },
+    { key: 'food',          label: 'Food',          color: '#b388ff' },
+    { key: 'transport',     label: 'Transport',     color: '#9c5fff' },
+    { key: 'utilities',     label: 'Utilities',     color: '#ce93d8' },
+    { key: 'entertainment', label: 'Entertainment', color: '#e1bee7' },
     { key: 'health',        label: 'Health',        color: '#22c55e' },
     { key: 'shopping',      label: 'Shopping',      color: '#f59e0b' }
   ];
@@ -119,10 +119,10 @@
             var chart = context.chart;
             var ctx2 = chart.ctx;
             var area = chart.chartArea;
-            if (!area) return '#2563eb';
+            if (!area) return '#b388ff';
             var gradient = ctx2.createLinearGradient(0, area.bottom, 0, area.top);
-            gradient.addColorStop(0, '#2563eb');
-            gradient.addColorStop(1, '#0f2040');
+            gradient.addColorStop(0, '#b388ff');
+            gradient.addColorStop(1, '#7c3aed');
             return gradient;
           },
           borderRadius: 6,
@@ -136,7 +136,7 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#0a1628',
+            backgroundColor: '#1a1a2e',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 13 },
             padding: 12,
@@ -151,13 +151,13 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#94a3b8', font: { size: 12 } }
+            ticks: { color: '#8a8a9a', font: { size: 12 } }
           },
           y: {
-            grid: { color: '#f1f5f9' },
+            grid: { color: '#2a2a2a' },
             border: { display: false },
             ticks: {
-              color: '#94a3b8',
+              color: '#8a8a9a',
               font: { size: 12 },
               callback: function (value) {
                 return '$' + (value / 1000).toFixed(1) + 'k';
@@ -198,7 +198,7 @@
             data: catTotals,
             backgroundColor: catColors,
             borderWidth: 2,
-            borderColor: '#ffffff',
+            borderColor: '#121212',
             hoverOffset: 6
           }]
         },
@@ -209,7 +209,7 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#0a1628',
+              backgroundColor: '#1a1a2e',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
@@ -267,6 +267,7 @@
   // Initial render
   render(3);
 })();
+
 
 
 
