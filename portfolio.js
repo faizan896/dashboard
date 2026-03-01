@@ -202,7 +202,7 @@
   function stockLogoHtml(holding) {
     var imgUrl = stockLogoUrl(holding.symbol);
     return '<div class="asset-logo">'
-      + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.symbol) + '" width="40" height="40" style="border-radius:50%;display:block;object-fit:contain;background:#fff;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.symbol) + '\'">'
+      + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.symbol) + '" width="40" height="40" style="border-radius:50%;display:block;object-fit:contain;background:#2a2a2a;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.symbol) + '\'">'
       + '</div>';
   }
 
@@ -464,6 +464,7 @@
     init();
   }
 })();
+
 
 
 
