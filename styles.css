@@ -975,6 +975,12 @@ body {
   border-color: var(--navy-500);
 }
 
+.exp-field-error {
+  border-color: var(--red-500) !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+
 input[type="month"].exp-field {
   min-width: 140px;
 }
@@ -1128,6 +1134,7 @@ input[type="number"].exp-field {
     grid-template-columns: 1fr;
   }
 }
+
 
 
 
