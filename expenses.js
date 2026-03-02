@@ -1,27 +1,7 @@
 (function () {
   'use strict';
 
-  // --- Sample expense data (18 months) ---
-  var expenseData = [
-    { month: '2024-09', label: 'Sep 24', housing: 1800, food: 620, transport: 340, utilities: 210, entertainment: 180, health: 95, shopping: 310 },
-    { month: '2024-10', label: 'Oct 24', housing: 1800, food: 580, transport: 290, utilities: 230, entertainment: 220, health: 60, shopping: 270 },
-    { month: '2024-11', label: 'Nov 24', housing: 1800, food: 640, transport: 310, utilities: 250, entertainment: 350, health: 120, shopping: 480 },
-    { month: '2024-12', label: 'Dec 24', housing: 1800, food: 710, transport: 280, utilities: 270, entertainment: 420, health: 80, shopping: 620 },
-    { month: '2025-01', label: 'Jan 25', housing: 1850, food: 590, transport: 320, utilities: 290, entertainment: 150, health: 200, shopping: 190 },
-    { month: '2025-02', label: 'Feb 25', housing: 1850, food: 560, transport: 300, utilities: 260, entertainment: 170, health: 75, shopping: 230 },
-    { month: '2025-03', label: 'Mar 25', housing: 1850, food: 610, transport: 350, utilities: 220, entertainment: 200, health: 90, shopping: 280 },
-    { month: '2025-04', label: 'Apr 25', housing: 1850, food: 630, transport: 310, utilities: 200, entertainment: 250, health: 110, shopping: 340 },
-    { month: '2025-05', label: 'May 25', housing: 1850, food: 600, transport: 330, utilities: 190, entertainment: 280, health: 65, shopping: 260 },
-    { month: '2025-06', label: 'Jun 25', housing: 1900, food: 650, transport: 370, utilities: 180, entertainment: 310, health: 85, shopping: 300 },
-    { month: '2025-07', label: 'Jul 25', housing: 1900, food: 680, transport: 390, utilities: 175, entertainment: 350, health: 70, shopping: 350 },
-    { month: '2025-08', label: 'Aug 25', housing: 1900, food: 660, transport: 360, utilities: 185, entertainment: 320, health: 130, shopping: 290 },
-    { month: '2025-09', label: 'Sep 25', housing: 1900, food: 620, transport: 340, utilities: 210, entertainment: 230, health: 95, shopping: 270 },
-    { month: '2025-10', label: 'Oct 25', housing: 1950, food: 640, transport: 310, utilities: 240, entertainment: 260, health: 55, shopping: 310 },
-    { month: '2025-11', label: 'Nov 25', housing: 1950, food: 670, transport: 300, utilities: 260, entertainment: 380, health: 100, shopping: 450 },
-    { month: '2025-12', label: 'Dec 25', housing: 1950, food: 730, transport: 290, utilities: 280, entertainment: 450, health: 75, shopping: 580 },
-    { month: '2026-01', label: 'Jan 26', housing: 2000, food: 610, transport: 330, utilities: 300, entertainment: 160, health: 180, shopping: 220 },
-    { month: '2026-02', label: 'Feb 26', housing: 2000, food: 580, transport: 310, utilities: 270, entertainment: 190, health: 90, shopping: 250 }
-  ];
+  var STORAGE_KEY = 'mm_expenses';
 
   var categories = [
     { key: 'housing',       label: 'Housing',       color: '#7c3aed' },
@@ -32,6 +12,51 @@
     { key: 'health',        label: 'Health',        color: '#22c55e' },
     { key: 'shopping',      label: 'Shopping',      color: '#f59e0b' }
   ];
+
+  // --- Storage ---
+  // Each entry: { id, month: "2026-02", category: "food", amount: 580 }
+  function loadExpenses() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch (e) { /* ignore */ }
+    return [];
+  }
+
+  function saveExpenses(list) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+  }
+
+  var expenses = loadExpenses();
+
+  // --- Aggregate individual entries into monthly data for charts ---
+  function aggregateByMonth() {
+    var map = {};
+    for (var i = 0; i < expenses.length; i++) {
+      var e = expenses[i];
+      if (!map[e.month]) {
+        map[e.month] = { month: e.month };
+        for (var c = 0; c < categories.length; c++) {
+          map[e.month][categories[c].key] = 0;
+        }
+      }
+      if (map[e.month][e.category] !== undefined) {
+        map[e.month][e.category] += e.amount;
+      }
+    }
+    // Sort by month
+    var keys = Object.keys(map).sort();
+    var result = [];
+    for (var k = 0; k < keys.length; k++) {
+      var entry = map[keys[k]];
+      // Build label like "Feb 26"
+      var parts = keys[k].split('-');
+      var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      entry.label = monthNames[parseInt(parts[1], 10) - 1] + ' ' + parts[0].slice(2);
+      result.push(entry);
+    }
+    return result;
+  }
 
   var barChart = null;
   var donutChart = null;
@@ -50,8 +75,9 @@
   }
 
   function getSlicedData(range) {
-    if (range === 0) return expenseData;
-    return expenseData.slice(-range);
+    var data = aggregateByMonth();
+    if (range === 0 || data.length <= range) return data;
+    return data.slice(-range);
   }
 
   function updateSummary(data) {
@@ -71,23 +97,28 @@
     document.getElementById('exp-total').textContent = fmtMoney(total);
     document.getElementById('exp-avg').textContent = fmtMoney(avg);
     document.getElementById('exp-high').textContent = fmtMoney(highest);
-    document.getElementById('exp-high-month').textContent = highestLabel;
+    document.getElementById('exp-high-month').textContent = highestLabel || '—';
 
     // Compare with previous period
-    var prevData = expenseData.slice(0, expenseData.length - data.length);
-    if (prevData.length > 0) {
-      var prevSlice = prevData.slice(-data.length);
-      if (prevSlice.length > 0) {
-        var prevTotal = 0;
-        for (var j = 0; j < prevSlice.length; j++) {
-          prevTotal += getTotal(prevSlice[j]);
-        }
+    var allData = aggregateByMonth();
+    var dataLen = data.length;
+    var prevSlice = allData.slice(0, allData.length - dataLen).slice(-dataLen);
+    var changeEl = document.getElementById('exp-total-change');
+    if (prevSlice.length > 0) {
+      var prevTotal = 0;
+      for (var j = 0; j < prevSlice.length; j++) {
+        prevTotal += getTotal(prevSlice[j]);
+      }
+      if (prevTotal > 0) {
         var pctChange = ((total - prevTotal) / prevTotal) * 100;
-        var changeEl = document.getElementById('exp-total-change');
         var sign = pctChange >= 0 ? '+' : '';
         changeEl.innerHTML = '<span class="' + (pctChange >= 0 ? 'up' : 'down') + '">'
           + sign + pctChange.toFixed(1) + '%</span> vs prev period';
+      } else {
+        changeEl.textContent = '';
       }
+    } else {
+      changeEl.textContent = '';
     }
 
     var avgSubEl = document.getElementById('exp-avg-sub');
@@ -217,7 +248,7 @@
               callbacks: {
                 label: function (context) {
                   var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
-                  var pct = ((context.parsed / total) * 100).toFixed(1);
+                  var pct = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
                   return ' ' + fmtMoney(context.parsed) + ' (' + pct + '%)';
                 }
               }
@@ -244,28 +275,176 @@
     }
   }
 
-  function render(range) {
-    currentRange = range;
-    var data = getSlicedData(range);
+  // --- Render entry list ---
+  function getCategoryLabel(key) {
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].key === key) return categories[i].label;
+    }
+    return key;
+  }
+
+  function getCategoryColor(key) {
+    for (var i = 0; i < categories.length; i++) {
+      if (categories[i].key === key) return categories[i].color;
+    }
+    return '#888';
+  }
+
+  function formatMonthLabel(month) {
+    var parts = month.split('-');
+    var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return monthNames[parseInt(parts[1], 10) - 1] + ' ' + parts[0];
+  }
+
+  function renderEntryList() {
+    var list = document.getElementById('expense-entries-list');
+    if (!list) return;
+
+    if (expenses.length === 0) {
+      list.innerHTML = '<p class="text-muted" style="font-size:13px;">No expenses yet. Add one above.</p>';
+      return;
+    }
+
+    // Sort newest first
+    var sorted = expenses.slice().sort(function (a, b) {
+      if (a.month !== b.month) return b.month.localeCompare(a.month);
+      return b.id - a.id;
+    });
+
+    var html = '';
+    for (var i = 0; i < sorted.length; i++) {
+      var e = sorted[i];
+      html += '<div class="expense-entry-item" data-id="' + e.id + '">'
+        + '<span class="exp-entry-dot" style="background:' + getCategoryColor(e.category) + '"></span>'
+        + '<span class="exp-entry-month">' + formatMonthLabel(e.month) + '</span>'
+        + '<span class="exp-entry-cat">' + getCategoryLabel(e.category) + '</span>'
+        + '<span class="exp-entry-amount">' + fmtMoney(e.amount) + '</span>'
+        + '<button class="exp-entry-del" title="Delete">&times;</button>'
+        + '</div>';
+    }
+    list.innerHTML = html;
+
+    // Attach delete handlers
+    var delBtns = list.querySelectorAll('.exp-entry-del');
+    for (var j = 0; j < delBtns.length; j++) {
+      delBtns[j].addEventListener('click', function () {
+        var id = parseInt(this.parentElement.getAttribute('data-id'), 10);
+        deleteExpense(id);
+      });
+    }
+  }
+
+  function deleteExpense(id) {
+    expenses = expenses.filter(function (e) { return e.id !== id; });
+    saveExpenses(expenses);
+    renderAll();
+  }
+
+  function addExpense(month, category, amount) {
+    var id = Date.now() + Math.floor(Math.random() * 1000);
+    expenses.push({ id: id, month: month, category: category, amount: amount });
+    saveExpenses(expenses);
+    renderAll();
+  }
+
+  // --- Full render ---
+  function renderAll() {
+    var data = getSlicedData(currentRange);
     updateSummary(data);
     renderBarChart(data);
     renderDonutChart(data);
+    renderEntryList();
   }
 
-  // --- Timeframe selector ---
-  var tabBtns = document.querySelectorAll('[data-exp-range]');
-  for (var i = 0; i < tabBtns.length; i++) {
-    tabBtns[i].addEventListener('click', function () {
-      for (var j = 0; j < tabBtns.length; j++) {
-        tabBtns[j].classList.remove('active');
-      }
-      this.classList.add('active');
-      render(parseInt(this.getAttribute('data-exp-range'), 10));
+  function render(range) {
+    currentRange = range;
+    renderAll();
+  }
+
+  // --- Add expense form ---
+  function setupAddForm() {
+    var btn = document.getElementById('exp-add-btn');
+    var monthInput = document.getElementById('exp-input-month');
+    var catInput = document.getElementById('exp-input-category');
+    var amountInput = document.getElementById('exp-input-amount');
+
+    // Default month to current
+    var now = new Date();
+    var y = now.getFullYear();
+    var m = String(now.getMonth() + 1).padStart(2, '0');
+    monthInput.value = y + '-' + m;
+
+    btn.addEventListener('click', function () {
+      var month = monthInput.value;
+      var category = catInput.value;
+      var amount = parseFloat(amountInput.value);
+
+      // Clear previous error highlights
+      monthInput.classList.remove('exp-field-error');
+      catInput.classList.remove('exp-field-error');
+      amountInput.classList.remove('exp-field-error');
+
+      var valid = true;
+      if (!month) { monthInput.classList.add('exp-field-error'); valid = false; }
+      if (!category) { catInput.classList.add('exp-field-error'); valid = false; }
+      if (isNaN(amount) || amount <= 0) { amountInput.classList.add('exp-field-error'); valid = false; }
+      if (!valid) return;
+
+      addExpense(month, category, amount);
+
+      // Reset amount but keep month/category for quick repeat entry
+      amountInput.value = '';
+      amountInput.focus();
+    });
+
+    amountInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') btn.click();
+    });
+
+    // Clear error highlight on interaction
+    monthInput.addEventListener('input', function () { this.classList.remove('exp-field-error'); });
+    catInput.addEventListener('change', function () { this.classList.remove('exp-field-error'); });
+    amountInput.addEventListener('input', function () { this.classList.remove('exp-field-error'); });
+  }
+
+  // --- Clear all ---
+  function setupClearAll() {
+    var btn = document.getElementById('exp-clear-all-btn');
+    btn.addEventListener('click', function () {
+      if (expenses.length === 0) return;
+      expenses = [];
+      saveExpenses(expenses);
+      renderAll();
     });
   }
 
-  // Initial render
-  render(3);
+  // --- Timeframe selector ---
+  function setupTabs() {
+    var tabBtns = document.querySelectorAll('[data-exp-range]');
+    for (var i = 0; i < tabBtns.length; i++) {
+      tabBtns[i].addEventListener('click', function () {
+        for (var j = 0; j < tabBtns.length; j++) {
+          tabBtns[j].classList.remove('active');
+        }
+        this.classList.add('active');
+        render(parseInt(this.getAttribute('data-exp-range'), 10));
+      });
+    }
+  }
+
+  // --- Init ---
+  function init() {
+    setupAddForm();
+    setupClearAll();
+    setupTabs();
+    render(3);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
 
 
