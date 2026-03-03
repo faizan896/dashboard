@@ -363,6 +363,54 @@
             <div class="holdings-list" id="stock-holdings-list"></div>
           </div>
         </div>
+
+        <!-- Ondo Global Markets Section -->
+        <div class="ondo-gm-section">
+          <div class="card portfolio-card ondo-card">
+            <div class="card-header">
+              <div class="ondo-header-left">
+                <svg class="ondo-logo" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="16" fill="#0052FF"/>
+                  <circle cx="16" cy="16" r="8" stroke="white" stroke-width="2.5" fill="none"/>
+                  <circle cx="16" cy="16" r="3" fill="white"/>
+                </svg>
+                <h2>Ondo Global Markets</h2>
+                <span class="ondo-badge">Tokenized RWA</span>
+              </div>
+              <div class="ondo-header-actions">
+                <button class="ondo-wallet-toggle" id="ondo-wallet-toggle-btn">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                    <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+                  </svg>
+                  Wallet
+                </button>
+                <button class="add-holding-btn" id="add-ondo-btn">+ Add</button>
+              </div>
+            </div>
+
+            <!-- Wallet Tracking -->
+            <div class="ondo-wallet-panel" id="ondo-wallet-panel">
+              <div class="wallet-input-row">
+                <input type="text" id="ondo-wallet-input" placeholder="Enter Ethereum wallet address (0x...)" spellcheck="false" autocomplete="off">
+                <button class="add-form-submit" id="ondo-wallet-scan-btn">Scan</button>
+                <button class="edit-cancel-btn" id="ondo-wallet-clear-btn" style="display:none;">Clear</button>
+              </div>
+              <div class="wallet-status" id="ondo-wallet-status"></div>
+              <div class="wallet-holdings-list" id="ondo-wallet-holdings"></div>
+            </div>
+
+            <!-- Manual Add Form -->
+            <div class="add-holding-form" id="add-ondo-form">
+              <input type="text" name="ondo-symbol" placeholder="Symbol (e.g. AAPLON, NVDAON)">
+              <input type="text" name="ondo-name" placeholder="Name (optional)">
+              <input type="number" name="ondo-qty" placeholder="Tokens held (optional)" min="0" step="any">
+              <button class="add-form-submit">Add Tokenized Stock</button>
+            </div>
+            <div class="holdings-list" id="ondo-holdings-list"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -372,6 +420,8 @@
   <script src="dashboard.js"></script>
 </body>
 </html>
+
+
 
 
 
