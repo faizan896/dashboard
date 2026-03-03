@@ -68,11 +68,29 @@
     return total;
   }
 
+  function getOndoTotal() {
+    var total = 0;
+    var ondoList = document.getElementById('ondo-holdings-list');
+    if (ondoList) {
+      var items = ondoList.querySelectorAll('.holding-item');
+      for (var j = 0; j < items.length; j++) {
+        var valEl = items[j].querySelector('.asset-value');
+        if (valEl) {
+          var text = valEl.textContent.replace(/[$,]/g, '');
+          var num = parseFloat(text);
+          if (!isNaN(num)) total += num;
+        }
+      }
+    }
+    return total;
+  }
+
   // --- Update stat cards ---
   function updateStats() {
     var cryptoTotal = getCryptoTotal();
     var stockTotal = getStockTotal();
-    var investedTotal = cryptoTotal + stockTotal;
+    var ondoTotal = getOndoTotal();
+    var investedTotal = cryptoTotal + stockTotal + ondoTotal;
     var netWorth = cashOnHand + investedTotal;
 
     document.getElementById('stat-networth').textContent = fmtMoney(netWorth);
@@ -84,10 +102,14 @@
     document.getElementById('stat-invested').textContent = fmtMoney(investedTotal);
 
     var investedSub = document.getElementById('stat-invested-sub');
-    if (cryptoTotal > 0 || stockTotal > 0) {
-      investedSub.textContent = fmtMoney(cryptoTotal) + ' crypto, ' + fmtMoney(stockTotal) + ' stocks';
+    var parts = [];
+    if (cryptoTotal > 0) parts.push(fmtMoney(cryptoTotal) + ' crypto');
+    if (stockTotal > 0) parts.push(fmtMoney(stockTotal) + ' stocks');
+    if (ondoTotal > 0) parts.push(fmtMoney(ondoTotal) + ' Ondo GM');
+    if (parts.length > 0) {
+      investedSub.textContent = parts.join(', ');
     } else {
-      investedSub.textContent = 'Crypto + Stocks';
+      investedSub.textContent = 'Crypto + Stocks + Ondo GM';
     }
 
     document.getElementById('stat-budget').textContent = fmtMoney(monthlyBudget);
@@ -175,4 +197,6 @@
     init();
   }
 })();
+
+
 
