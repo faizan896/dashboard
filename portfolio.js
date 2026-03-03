@@ -10,7 +10,10 @@
     { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0, image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
     { id: 'solana',   name: 'Solana',   ticker: 'SOL', qty: 0, image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
     { id: 'cardano',  name: 'Cardano',  ticker: 'ADA', qty: 0, image: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
-    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0, image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' }
+    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0, image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
+    { id: 'ondo',     name: 'Ondo',     ticker: 'ONDO', qty: 0, image: 'https://assets.coingecko.com/coins/images/26580/small/ONDO.png' },
+    { id: 'ondo-us-dollar-yield', name: 'Ondo US Dollar Yield', ticker: 'USDY', qty: 0, image: 'https://assets.coingecko.com/coins/images/31695/small/usdy.png' },
+    { id: 'ousg',     name: 'Ondo Short-Term US Gov Bond', ticker: 'OUSG', qty: 0, image: 'https://assets.coingecko.com/coins/images/31694/small/ousg.png' }
   ];
 
   var DEFAULT_STOCKS = [
@@ -444,17 +447,413 @@
     });
   }
 
+  // --- Ondo Global Markets (Tokenized Stocks) ---
+
+  // Known Ondo token contracts on Ethereum mainnet
+  var ONDO_CONTRACTS = [
+    { address: '0x14c3abf95cb9c93a8b82c1cdcb76d72cb87b2d4c', symbol: 'AAPLON', underlying: 'AAPL', name: 'Apple (Tokenized)', decimals: 18 },
+    { address: '0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee', symbol: 'NVDAON', underlying: 'NVDA', name: 'NVIDIA (Tokenized)', decimals: 18 },
+    { address: '0xfAbA6f8e4a5E8AB82F62fe7C39859FA577269BE3', symbol: 'ONDO', underlying: null, name: 'Ondo', decimals: 18, coingeckoId: 'ondo' },
+    { address: '0x96F6eF951840721AdBF46Ac996b59E0235CB985C', symbol: 'USDY', underlying: null, name: 'Ondo US Dollar Yield', decimals: 18, coingeckoId: 'ondo-us-dollar-yield' },
+    { address: '0x1B19C19393e2d034D8Ff31fF34c81252FcBbEE92', symbol: 'OUSG', underlying: null, name: 'Ondo Short-Term US Gov Bond', decimals: 18, coingeckoId: 'ousg' }
+  ];
+
+  var ETH_RPC = 'https://eth.llamarpc.com';
+  var walletAddress = '';
+  var walletBalances = {}; // symbol -> { balance, name, underlying, contract }
+
+  function loadWalletAddress() {
+    try {
+      var saved = localStorage.getItem('mm_ondo_wallet');
+      if (saved) return saved;
+    } catch (e) { /* ignore */ }
+    return '';
+  }
+
+  function saveWalletAddress(addr) {
+    try {
+      localStorage.setItem('mm_ondo_wallet', addr);
+    } catch (e) { /* ignore */ }
+  }
+
+  function isValidEthAddress(addr) {
+    return /^0x[0-9a-fA-F]{40}$/.test(addr);
+  }
+
+  // Call balanceOf(address) on an ERC-20 contract via eth_call
+  async function getTokenBalance(tokenAddress, walletAddr) {
+    // balanceOf(address) selector = 0x70a08231
+    var data = '0x70a08231' + walletAddr.slice(2).toLowerCase().padStart(64, '0');
+    try {
+      var res = await fetch(ETH_RPC, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'eth_call',
+          params: [{ to: tokenAddress, data: data }, 'latest'],
+          id: 1
+        })
+      });
+      var json = await res.json();
+      if (json.result && json.result !== '0x') {
+        return BigInt(json.result);
+      }
+      return BigInt(0);
+    } catch (e) {
+      return BigInt(0);
+    }
+  }
+
+  function formatTokenBalance(rawBalance, decimals) {
+    if (rawBalance === BigInt(0)) return 0;
+    var divisor = BigInt(10) ** BigInt(decimals);
+    var whole = rawBalance / divisor;
+    var remainder = rawBalance % divisor;
+    var remainderStr = remainder.toString().padStart(decimals, '0').slice(0, 6);
+    // Remove trailing zeros
+    remainderStr = remainderStr.replace(/0+$/, '');
+    if (remainderStr === '') return Number(whole);
+    return parseFloat(whole.toString() + '.' + remainderStr);
+  }
+
+  async function scanWallet(addr) {
+    var statusEl = document.getElementById('ondo-wallet-status');
+    var holdingsEl = document.getElementById('ondo-wallet-holdings');
+
+    statusEl.textContent = 'Scanning wallet for Ondo tokens...';
+    statusEl.className = 'wallet-status scanning';
+    holdingsEl.innerHTML = '';
+    walletBalances = {};
+
+    var foundCount = 0;
+    var promises = ONDO_CONTRACTS.map(async function (token) {
+      var rawBalance = await getTokenBalance(token.address, addr);
+      var balance = formatTokenBalance(rawBalance, token.decimals);
+      if (balance > 0) {
+        foundCount++;
+        walletBalances[token.symbol] = {
+          balance: balance,
+          name: token.name,
+          underlying: token.underlying,
+          symbol: token.symbol,
+          contract: token.address,
+          coingeckoId: token.coingeckoId || null
+        };
+      }
+    });
+
+    await Promise.allSettled(promises);
+
+    if (foundCount > 0) {
+      statusEl.textContent = 'Found ' + foundCount + ' Ondo token' + (foundCount > 1 ? 's' : '') + ' in wallet';
+      statusEl.className = 'wallet-status success';
+    } else {
+      statusEl.textContent = 'No Ondo tokens found in this wallet';
+      statusEl.className = 'wallet-status';
+    }
+
+    renderWalletHoldings();
+    renderOndo(); // Re-render to merge data
+  }
+
+  function renderWalletHoldings() {
+    var holdingsEl = document.getElementById('ondo-wallet-holdings');
+    if (!holdingsEl) return;
+
+    var symbols = Object.keys(walletBalances);
+    if (symbols.length === 0) {
+      holdingsEl.innerHTML = '';
+      return;
+    }
+
+    var html = '';
+    for (var i = 0; i < symbols.length; i++) {
+      var wb = walletBalances[symbols[i]];
+      var priceInfo = ondoPrices[wb.symbol];
+      var valueStr = '\u2014';
+
+      // For tokenized stocks, use underlying stock price
+      if (wb.underlying && priceInfo) {
+        valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
+      } else if (priceInfo) {
+        valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
+      }
+
+      // Use underlying stock logo if available
+      var logoHtml;
+      if (wb.underlying) {
+        var logoUrl = stockLogoUrl(wb.underlying);
+        logoHtml = '<div class="asset-logo ondo-asset-logo" style="width:32px;height:32px;">'
+          + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(wb.symbol) + '" width="32" height="32">'
+          + '<span class="ondo-token-badge" style="width:14px;height:14px;font-size:7px;">ON</span>'
+          + '</div>';
+      } else {
+        logoHtml = '<div class="asset-logo-gen" style="background:#0052FF;width:32px;height:32px;font-size:10px;">'
+          + escHtml(wb.symbol.substring(0, 4))
+          + '</div>';
+      }
+
+      html += '<div class="wallet-holding-item">'
+        + '<div class="wallet-holding-left">'
+        + logoHtml
+        + '<div class="wallet-holding-info">'
+        + '<span class="wallet-holding-name">' + escHtml(wb.name) + '<span class="wallet-source-badge">Wallet</span></span>'
+        + '<span class="wallet-holding-balance">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</span>'
+        + '</div>'
+        + '</div>'
+        + '<span class="wallet-holding-value">' + valueStr + '</span>'
+        + '</div>';
+    }
+    holdingsEl.innerHTML = html;
+
+    // Handle broken images
+    var imgs = holdingsEl.querySelectorAll('.asset-logo img');
+    for (var k = 0; k < imgs.length; k++) {
+      imgs[k].addEventListener('error', handleImgError);
+    }
+  }
+
+  function setupWalletPanel() {
+    var toggleBtn = document.getElementById('ondo-wallet-toggle-btn');
+    var panel = document.getElementById('ondo-wallet-panel');
+    var walletInput = document.getElementById('ondo-wallet-input');
+    var scanBtn = document.getElementById('ondo-wallet-scan-btn');
+    var clearBtn = document.getElementById('ondo-wallet-clear-btn');
+
+    if (!toggleBtn || !panel) return;
+
+    // Load saved wallet
+    walletAddress = loadWalletAddress();
+    if (walletAddress) {
+      walletInput.value = walletAddress;
+      toggleBtn.classList.add('active');
+      panel.classList.add('show');
+      clearBtn.style.display = '';
+      scanWallet(walletAddress);
+    }
+
+    toggleBtn.addEventListener('click', function () {
+      panel.classList.toggle('show');
+      toggleBtn.classList.toggle('active');
+      if (panel.classList.contains('show') && !walletAddress) {
+        walletInput.focus();
+      }
+    });
+
+    scanBtn.addEventListener('click', function () {
+      var addr = walletInput.value.trim();
+      if (!isValidEthAddress(addr)) {
+        var statusEl = document.getElementById('ondo-wallet-status');
+        statusEl.textContent = 'Invalid Ethereum address. Must be 0x followed by 40 hex characters.';
+        statusEl.className = 'wallet-status error';
+        return;
+      }
+      walletAddress = addr;
+      saveWalletAddress(addr);
+      clearBtn.style.display = '';
+      scanWallet(addr);
+    });
+
+    clearBtn.addEventListener('click', function () {
+      walletAddress = '';
+      walletBalances = {};
+      saveWalletAddress('');
+      walletInput.value = '';
+      clearBtn.style.display = 'none';
+      document.getElementById('ondo-wallet-status').textContent = '';
+      document.getElementById('ondo-wallet-status').className = 'wallet-status';
+      document.getElementById('ondo-wallet-holdings').innerHTML = '';
+      renderOndo();
+    });
+
+    walletInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') scanBtn.click();
+    });
+  }
+
+  var DEFAULT_ONDO = [
+    { symbol: 'AAPLON',  underlying: 'AAPL',  name: 'Apple (Tokenized)',   qty: 0 },
+    { symbol: 'NVDAON',  underlying: 'NVDA',  name: 'NVIDIA (Tokenized)',  qty: 0 },
+    { symbol: 'TSLAON',  underlying: 'TSLA',  name: 'Tesla (Tokenized)',   qty: 0 },
+    { symbol: 'GOOGLON', underlying: 'GOOGL', name: 'Alphabet (Tokenized)', qty: 0 },
+    { symbol: 'AMZNON',  underlying: 'AMZN',  name: 'Amazon (Tokenized)',  qty: 0 },
+    { symbol: 'SPYON',   underlying: 'SPY',   name: 'S&P 500 ETF (Tokenized)', qty: 0 },
+    { symbol: 'QQQON',   underlying: 'QQQ',   name: 'Nasdaq 100 ETF (Tokenized)', qty: 0 }
+  ];
+
+  var ondoHoldings = loadHoldings('mm_ondo', DEFAULT_ONDO);
+  var ondoPrices = {};  // symbol -> { price, change }
+
+  async function fetchOndoPrices() {
+    // Ondo tokenized stocks mirror underlying stock prices — fetch via Yahoo Finance
+    var promises = ondoHoldings.map(function (h) {
+      return fetchOneOndoStock(h);
+    });
+    await Promise.allSettled(promises);
+    renderOndo();
+  }
+
+  async function fetchOneOndoStock(holding) {
+    try {
+      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+        + encodeURIComponent(holding.underlying) + '?range=1d&interval=1d';
+      var url = PROXY + encodeURIComponent(yahooUrl);
+      var res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      var data = await res.json();
+      var result = data.chart.result[0];
+      var meta = result.meta;
+      var price = meta.regularMarketPrice;
+      var prevClose = meta.chartPreviousClose || meta.previousClose;
+      var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
+      ondoPrices[holding.symbol] = { price: price, change: changePct };
+    } catch (e) { /* silent */ }
+  }
+
+  function renderOndo() {
+    var list = document.getElementById('ondo-holdings-list');
+    if (!list) return;
+
+    var html = '';
+    for (var i = 0; i < ondoHoldings.length; i++) {
+      var h = ondoHoldings[i];
+      var p = ondoPrices[h.symbol];
+      var price = p ? fmtPrice(p.price, 2) : '\u2014';
+      var change = p ? fmtChange(p.change) : '\u2014';
+      var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
+
+      // Combine manual qty with wallet balance
+      var totalQty = h.qty || 0;
+      var wb = walletBalances[h.symbol];
+      if (wb) totalQty += wb.balance;
+
+      var value = (p && totalQty > 0) ? fmtPrice(p.price * totalQty, 2) : price;
+      var qtyLabel = '';
+      if (totalQty > 0) {
+        qtyLabel = totalQty.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens';
+        if (wb && h.qty > 0) {
+          qtyLabel += ' (manual + wallet)';
+        } else if (wb && h.qty === 0) {
+          qtyLabel += ' (wallet)';
+        }
+      }
+
+      // Use Ondo branding with underlying stock logo
+      var logoUrl = stockLogoUrl(h.underlying);
+      var logoHtml = '<div class="asset-logo ondo-asset-logo">'
+        + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(h.symbol) + '" width="40" height="40">'
+        + '<span class="ondo-token-badge">ON</span>'
+        + '</div>';
+
+      html += '<div class="holding-item">'
+        + '<div class="holding-left">'
+        + logoHtml
+        + '<div class="asset-info">'
+        + '<span class="asset-name">' + escHtml(h.name) + '</span>'
+        + '<span class="asset-ticker">' + escHtml(h.symbol)
+        + (qtyLabel ? ' &middot; ' + escHtml(qtyLabel) : '') + '</span>'
+        + '</div>'
+        + '</div>'
+        + '<div class="holding-right">'
+        + '<span class="asset-value">' + value + '</span>'
+        + '<span class="asset-change ' + changeClass + '">' + change + '</span>'
+        + '</div>'
+        + '<button class="remove-holding-btn" data-type="ondo" data-index="' + i + '" title="Remove">&times;</button>'
+        + '</div>';
+    }
+    list.innerHTML = html;
+
+    // Handle broken images
+    var imgs = list.querySelectorAll('.asset-logo img');
+    for (var k = 0; k < imgs.length; k++) {
+      imgs[k].addEventListener('error', handleImgError);
+    }
+
+    var removeBtns = list.querySelectorAll('.remove-holding-btn');
+    for (var j = 0; j < removeBtns.length; j++) {
+      removeBtns[j].addEventListener('click', handleRemove);
+    }
+  }
+
+  function setupAddOndo() {
+    var btn = document.getElementById('add-ondo-btn');
+    var form = document.getElementById('add-ondo-form');
+    if (!btn || !form) return;
+
+    btn.addEventListener('click', function () {
+      form.classList.toggle('show');
+      if (form.classList.contains('show')) {
+        form.querySelector('input').focus();
+      }
+    });
+
+    form.querySelector('.add-form-submit').addEventListener('click', function () {
+      var symbolInput = form.querySelector('[name="ondo-symbol"]');
+      var nameInput = form.querySelector('[name="ondo-name"]');
+      var qtyInput = form.querySelector('[name="ondo-qty"]');
+
+      var symbol = symbolInput.value.trim().toUpperCase();
+      var name = nameInput.value.trim();
+      var qty = parseFloat(qtyInput.value) || 0;
+
+      if (!symbol) return;
+
+      // Derive underlying by stripping "ON" suffix
+      var underlying = symbol.replace(/ON$/, '');
+
+      ondoHoldings.push({
+        symbol: symbol,
+        underlying: underlying,
+        name: name || symbol,
+        qty: qty
+      });
+      saveHoldings('mm_ondo', ondoHoldings);
+
+      symbolInput.value = '';
+      nameInput.value = '';
+      qtyInput.value = '';
+      form.classList.remove('show');
+
+      fetchOndoPrices();
+    });
+  }
+
+  // Update handleRemove to support ondo type
+  var _origHandleRemove = handleRemove;
+  handleRemove = function (e) {
+    var btn = e.currentTarget;
+    var type = btn.getAttribute('data-type');
+    var idx = parseInt(btn.getAttribute('data-index'), 10);
+    if (type === 'ondo') {
+      ondoHoldings.splice(idx, 1);
+      saveHoldings('mm_ondo', ondoHoldings);
+      renderOndo();
+    } else {
+      _origHandleRemove.call(this, e);
+    }
+  };
+
   // --- Init ---
   function init() {
     renderCrypto();
     renderStocks();
+    renderOndo();
     setupAddCrypto();
     setupAddStock();
+    setupAddOndo();
+    setupWalletPanel();
     fetchCryptoPrices();
     fetchStockPrices();
+    fetchOndoPrices();
     setInterval(function () {
       fetchCryptoPrices();
       fetchStockPrices();
+      fetchOndoPrices();
+      // Re-scan wallet if connected
+      if (walletAddress) {
+        scanWallet(walletAddress);
+      }
     }, REFRESH_INTERVAL);
   }
 
@@ -464,6 +863,7 @@
     init();
   }
 })();
+
 
 
 
