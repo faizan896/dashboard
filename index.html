@@ -330,6 +330,115 @@
           </div>
         </div>
 
+        <!-- Transaction Tracker & P&L -->
+        <div class="txn-section">
+          <!-- P&L Summary Stats -->
+          <div class="txn-stats-row">
+            <div class="txn-stat-card">
+              <div class="pnl-stat-label">Total P&L</div>
+              <div class="pnl-stat-value" id="pnl-stat-total">$0</div>
+              <div class="pnl-stat-sub">Realized + Unrealized</div>
+            </div>
+            <div class="txn-stat-card">
+              <div class="pnl-stat-label">Unrealized P&L</div>
+              <div class="pnl-stat-value" id="pnl-stat-unrealized">$0</div>
+              <div class="pnl-stat-sub">Open positions</div>
+            </div>
+            <div class="txn-stat-card">
+              <div class="pnl-stat-label">Realized P&L</div>
+              <div class="pnl-stat-value" id="pnl-stat-realized">$0</div>
+              <div class="pnl-stat-sub">Closed trades</div>
+            </div>
+            <div class="txn-stat-card">
+              <div class="pnl-stat-label">Cost Basis</div>
+              <div class="pnl-stat-value" id="pnl-stat-invested">$0</div>
+              <div class="pnl-stat-sub">Current holdings</div>
+            </div>
+          </div>
+
+          <!-- Investment Returns Chart -->
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <h2>Investment Returns</h2>
+              <div class="card-actions">
+                <button class="tab-btn active" data-returns-view="total">Total</button>
+                <button class="tab-btn" data-returns-view="pct">% Return</button>
+              </div>
+            </div>
+            <div class="returns-chart-wrap">
+              <canvas id="returns-bar-chart"></canvas>
+            </div>
+            <p class="text-muted" style="font-size:11px;margin-top:8px;" id="returns-chart-empty">Add transactions to see investment returns by asset.</p>
+          </div>
+
+          <!-- Performance Chart + P&L Breakdown Row -->
+          <div class="txn-charts-row">
+            <!-- Portfolio Performance Chart -->
+            <div class="card txn-perf-card">
+              <div class="card-header">
+                <h2>Portfolio Performance</h2>
+              </div>
+              <div class="txn-perf-chart-wrap">
+                <canvas id="ondo-perf-chart"></canvas>
+              </div>
+              <p class="text-muted" style="font-size:11px;margin-top:8px;">Value tracked daily. Add transactions & check back to build history.</p>
+            </div>
+
+            <!-- P&L Breakdown by Asset -->
+            <div class="card txn-pnl-card">
+              <div class="card-header">
+                <h2>P&L by Asset</h2>
+              </div>
+              <div class="pnl-summary-list" id="pnl-summary-list">
+                <p class="text-muted" style="font-size:13px;">Add transactions to see P&L breakdown.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Log Transaction Form -->
+          <div class="card txn-entry-card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <h2>Log Transaction</h2>
+              <button class="view-all-btn" id="txn-toggle-custom" type="button">Custom asset</button>
+            </div>
+            <div class="txn-add-row">
+              <input type="date" id="txn-input-date" class="exp-field">
+              <select id="txn-input-type" class="exp-field" style="min-width:90px;">
+                <option value="buy">Buy</option>
+                <option value="sell">Sell</option>
+              </select>
+              <div id="txn-asset-select-row" style="display:flex;flex:1;min-width:160px;">
+                <select id="txn-input-asset" class="exp-field" style="width:100%;">
+                  <option value="">Select asset...</option>
+                </select>
+              </div>
+              <div id="txn-asset-custom-row" style="display:none;gap:8px;flex:1;min-width:200px;">
+                <input type="text" id="txn-input-custom-asset" class="exp-field" placeholder="Ticker (e.g. BTC)" style="flex:1;">
+                <select id="txn-input-custom-type" class="exp-field" style="min-width:100px;">
+                  <option value="crypto">Crypto</option>
+                  <option value="stock">Stock</option>
+                  <option value="ondo">Ondo GM</option>
+                </select>
+              </div>
+              <input type="number" id="txn-input-qty" class="exp-field" placeholder="Quantity" min="0" step="any" style="min-width:100px;">
+              <input type="number" id="txn-input-price" class="exp-field" placeholder="Price ($)" min="0" step="any" style="min-width:110px;">
+              <span class="txn-total-display" id="txn-total-display">$0.00</span>
+              <button class="add-form-submit" id="txn-add-btn">Log</button>
+            </div>
+          </div>
+
+          <!-- Transaction History -->
+          <div class="card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <h2>Transaction History</h2>
+              <button class="view-all-btn" id="txn-clear-all-btn">Clear All</button>
+            </div>
+            <div id="txn-entries-list" class="txn-entries-list">
+              <p class="text-muted" style="font-size:13px;">No transactions yet. Log a buy or sell above.</p>
+            </div>
+          </div>
+        </div>
+
         <!-- Portfolio Section -->
         <div class="portfolio-row">
           <!-- Crypto Holdings -->
@@ -417,10 +526,10 @@
   <script src="prices.js"></script>
   <script src="expenses.js"></script>
   <script src="portfolio.js"></script>
+  <script src="transactions.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
-
 
 
 
