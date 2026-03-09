@@ -4,17 +4,15 @@
   var STORAGE_KEY = 'mm_expenses';
 
   var categories = [
-    { key: 'housing',       label: 'Housing',       color: '#7c3aed' },
-    { key: 'food',          label: 'Food',          color: '#b388ff' },
-    { key: 'transport',     label: 'Transport',     color: '#9c5fff' },
-    { key: 'utilities',     label: 'Utilities',     color: '#ce93d8' },
-    { key: 'entertainment', label: 'Entertainment', color: '#e1bee7' },
-    { key: 'health',        label: 'Health',        color: '#22c55e' },
-    { key: 'shopping',      label: 'Shopping',      color: '#f59e0b' }
+    { key: 'housing',       label: 'Housing',       color: '#8b5cf6' },
+    { key: 'food',          label: 'Food',          color: '#f59e0b' },
+    { key: 'transport',     label: 'Transport',     color: '#3b82f6' },
+    { key: 'utilities',     label: 'Utilities',     color: '#10b981' },
+    { key: 'entertainment', label: 'Entertainment', color: '#ec4899' },
+    { key: 'health',        label: 'Health',        color: '#14b8a6' },
+    { key: 'shopping',      label: 'Shopping',      color: '#f97316' }
   ];
 
-  // --- Storage ---
-  // Each entry: { id, month: "2026-02", category: "food", amount: 580 }
   function loadExpenses() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
@@ -29,7 +27,6 @@
 
   var expenses = loadExpenses();
 
-  // --- Aggregate individual entries into monthly data for charts ---
   function aggregateByMonth() {
     var map = {};
     for (var i = 0; i < expenses.length; i++) {
@@ -44,12 +41,10 @@
         map[e.month][e.category] += e.amount;
       }
     }
-    // Sort by month
     var keys = Object.keys(map).sort();
     var result = [];
     for (var k = 0; k < keys.length; k++) {
       var entry = map[keys[k]];
-      // Build label like "Feb 26"
       var parts = keys[k].split('-');
       var monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       entry.label = monthNames[parseInt(parts[1], 10) - 1] + ' ' + parts[0].slice(2);
@@ -94,35 +89,41 @@
     }
     var avg = data.length > 0 ? Math.round(total / data.length) : 0;
 
-    document.getElementById('exp-total').textContent = fmtMoney(total);
-    document.getElementById('exp-avg').textContent = fmtMoney(avg);
-    document.getElementById('exp-high').textContent = fmtMoney(highest);
-    document.getElementById('exp-high-month').textContent = highestLabel || '—';
+    var el;
+    el = document.getElementById('exp-total');
+    if (el) el.textContent = fmtMoney(total);
+    el = document.getElementById('exp-avg');
+    if (el) el.textContent = fmtMoney(avg);
+    el = document.getElementById('exp-high');
+    if (el) el.textContent = fmtMoney(highest);
+    el = document.getElementById('exp-high-month');
+    if (el) el.textContent = highestLabel || '--';
 
-    // Compare with previous period
     var allData = aggregateByMonth();
     var dataLen = data.length;
     var prevSlice = allData.slice(0, allData.length - dataLen).slice(-dataLen);
     var changeEl = document.getElementById('exp-total-change');
-    if (prevSlice.length > 0) {
-      var prevTotal = 0;
-      for (var j = 0; j < prevSlice.length; j++) {
-        prevTotal += getTotal(prevSlice[j]);
-      }
-      if (prevTotal > 0) {
-        var pctChange = ((total - prevTotal) / prevTotal) * 100;
-        var sign = pctChange >= 0 ? '+' : '';
-        changeEl.innerHTML = '<span class="' + (pctChange >= 0 ? 'up' : 'down') + '">'
-          + sign + pctChange.toFixed(1) + '%</span> vs prev period';
+    if (changeEl) {
+      if (prevSlice.length > 0) {
+        var prevTotal = 0;
+        for (var j = 0; j < prevSlice.length; j++) {
+          prevTotal += getTotal(prevSlice[j]);
+        }
+        if (prevTotal > 0) {
+          var pctChange = ((total - prevTotal) / prevTotal) * 100;
+          var sign = pctChange >= 0 ? '+' : '';
+          changeEl.innerHTML = '<span class="' + (pctChange >= 0 ? 'up' : 'down') + '">'
+            + sign + pctChange.toFixed(1) + '%</span> vs prev period';
+        } else {
+          changeEl.textContent = '';
+        }
       } else {
         changeEl.textContent = '';
       }
-    } else {
-      changeEl.textContent = '';
     }
 
     var avgSubEl = document.getElementById('exp-avg-sub');
-    avgSubEl.textContent = data.length + ' month' + (data.length !== 1 ? 's' : '') + ' shown';
+    if (avgSubEl) avgSubEl.textContent = data.length + ' month' + (data.length !== 1 ? 's' : '') + ' shown';
   }
 
   function renderBarChart(data) {
@@ -150,15 +151,15 @@
             var chart = context.chart;
             var ctx2 = chart.ctx;
             var area = chart.chartArea;
-            if (!area) return '#b388ff';
+            if (!area) return '#8b5cf6';
             var gradient = ctx2.createLinearGradient(0, area.bottom, 0, area.top);
-            gradient.addColorStop(0, '#b388ff');
-            gradient.addColorStop(1, '#7c3aed');
+            gradient.addColorStop(0, '#8b5cf6');
+            gradient.addColorStop(1, '#6366f1');
             return gradient;
           },
-          borderRadius: 6,
+          borderRadius: 8,
           borderSkipped: false,
-          maxBarThickness: 40
+          maxBarThickness: 36
         }]
       },
       options: {
@@ -167,28 +168,26 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1a1a2e',
+            backgroundColor: '#1a1a25',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 13 },
             padding: 12,
-            cornerRadius: 8,
+            cornerRadius: 10,
             callbacks: {
-              label: function (context) {
-                return fmtMoney(context.parsed.y);
-              }
+              label: function (context) { return fmtMoney(context.parsed.y); }
             }
           }
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#8a8a9a', font: { size: 12 } }
+            ticks: { color: '#5e5e78', font: { size: 12 } }
           },
           y: {
-            grid: { color: '#2a2a2a' },
+            grid: { color: 'rgba(255,255,255,0.04)' },
             border: { display: false },
             ticks: {
-              color: '#8a8a9a',
+              color: '#5e5e78',
               font: { size: 12 },
               callback: function (value) {
                 return '$' + (value / 1000).toFixed(1) + 'k';
@@ -228,23 +227,23 @@
           datasets: [{
             data: catTotals,
             backgroundColor: catColors,
-            borderWidth: 2,
-            borderColor: '#121212',
-            hoverOffset: 6
+            borderWidth: 3,
+            borderColor: '#111119',
+            hoverOffset: 8
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '65%',
+          cutout: '68%',
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1a1a2e',
+              backgroundColor: '#1a1a25',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
-              cornerRadius: 8,
+              cornerRadius: 10,
               callbacks: {
                 label: function (context) {
                   var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
@@ -258,7 +257,6 @@
       });
     }
 
-    // Build legend
     var legendEl = document.getElementById('expenses-legend');
     if (legendEl) {
       var grandTotal = catTotals.reduce(function (a, b) { return a + b; }, 0);
@@ -275,7 +273,6 @@
     }
   }
 
-  // --- Render entry list ---
   function getCategoryLabel(key) {
     for (var i = 0; i < categories.length; i++) {
       if (categories[i].key === key) return categories[i].label;
@@ -305,7 +302,6 @@
       return;
     }
 
-    // Sort newest first
     var sorted = expenses.slice().sort(function (a, b) {
       if (a.month !== b.month) return b.month.localeCompare(a.month);
       return b.id - a.id;
@@ -324,7 +320,6 @@
     }
     list.innerHTML = html;
 
-    // Attach delete handlers
     var delBtns = list.querySelectorAll('.exp-entry-del');
     for (var j = 0; j < delBtns.length; j++) {
       delBtns[j].addEventListener('click', function () {
@@ -347,7 +342,6 @@
     renderAll();
   }
 
-  // --- Full render ---
   function renderAll() {
     var data = getSlicedData(currentRange);
     updateSummary(data);
@@ -361,14 +355,13 @@
     renderAll();
   }
 
-  // --- Add expense form ---
   function setupAddForm() {
     var btn = document.getElementById('exp-add-btn');
     var monthInput = document.getElementById('exp-input-month');
     var catInput = document.getElementById('exp-input-category');
     var amountInput = document.getElementById('exp-input-amount');
+    if (!btn || !monthInput) return;
 
-    // Default month to current
     var now = new Date();
     var y = now.getFullYear();
     var m = String(now.getMonth() + 1).padStart(2, '0');
@@ -379,20 +372,17 @@
       var category = catInput.value;
       var amount = parseFloat(amountInput.value);
 
-      // Clear previous error highlights
-      monthInput.classList.remove('exp-field-error');
-      catInput.classList.remove('exp-field-error');
-      amountInput.classList.remove('exp-field-error');
+      monthInput.classList.remove('form-field-error');
+      catInput.classList.remove('form-field-error');
+      amountInput.classList.remove('form-field-error');
 
       var valid = true;
-      if (!month) { monthInput.classList.add('exp-field-error'); valid = false; }
-      if (!category) { catInput.classList.add('exp-field-error'); valid = false; }
-      if (isNaN(amount) || amount <= 0) { amountInput.classList.add('exp-field-error'); valid = false; }
+      if (!month) { monthInput.classList.add('form-field-error'); valid = false; }
+      if (!category) { catInput.classList.add('form-field-error'); valid = false; }
+      if (isNaN(amount) || amount <= 0) { amountInput.classList.add('form-field-error'); valid = false; }
       if (!valid) return;
 
       addExpense(month, category, amount);
-
-      // Reset amount but keep month/category for quick repeat entry
       amountInput.value = '';
       amountInput.focus();
     });
@@ -401,15 +391,14 @@
       if (e.key === 'Enter') btn.click();
     });
 
-    // Clear error highlight on interaction
-    monthInput.addEventListener('input', function () { this.classList.remove('exp-field-error'); });
-    catInput.addEventListener('change', function () { this.classList.remove('exp-field-error'); });
-    amountInput.addEventListener('input', function () { this.classList.remove('exp-field-error'); });
+    monthInput.addEventListener('input', function () { this.classList.remove('form-field-error'); });
+    catInput.addEventListener('change', function () { this.classList.remove('form-field-error'); });
+    amountInput.addEventListener('input', function () { this.classList.remove('form-field-error'); });
   }
 
-  // --- Clear all ---
   function setupClearAll() {
     var btn = document.getElementById('exp-clear-all-btn');
+    if (!btn) return;
     btn.addEventListener('click', function () {
       if (expenses.length === 0) return;
       expenses = [];
@@ -418,7 +407,6 @@
     });
   }
 
-  // --- Timeframe selector ---
   function setupTabs() {
     var tabBtns = document.querySelectorAll('[data-exp-range]');
     for (var i = 0; i < tabBtns.length; i++) {
@@ -432,7 +420,6 @@
     }
   }
 
-  // --- Init ---
   function init() {
     setupAddForm();
     setupClearAll();
@@ -446,6 +433,7 @@
     init();
   }
 })();
+
 
 
 
