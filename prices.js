@@ -67,6 +67,7 @@
     }
   }
 
+  // --- Fetch with retry ---
   async function fetchWithRetry(url, retries) {
     retries = retries || 2;
     for (var i = 0; i <= retries; i++) {
@@ -81,6 +82,7 @@
     }
   }
 
+  // --- CoinGecko: Bitcoin ---
   async function fetchBTC() {
     try {
       var data = await fetchWithRetry(
@@ -91,7 +93,9 @@
       var el = document.getElementById('price-btc');
       if (el) el.textContent = fmtPrice(price, 0);
       applyChange(document.getElementById('change-btc'), change);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // silent
+    }
   }
 
   async function fetchBTCSpark() {
@@ -101,13 +105,17 @@
       );
       var prices = data.prices.map(function (p) { return p[1]; });
       renderSparkline('spark-btc', prices);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // silent
+    }
   }
 
+  // --- Yahoo Finance with proxy fallback ---
   async function fetchYahoo(symbol) {
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
       + encodeURIComponent(symbol) + '?range=5d&interval=1h';
 
+    // Try current proxy, then fallback
     for (var attempt = 0; attempt < PROXIES.length; attempt++) {
       try {
         var url = getProxy() + encodeURIComponent(yahooUrl);
@@ -137,7 +145,9 @@
       if (el) el.textContent = fmtPrice(d.price, 2);
       applyChange(document.getElementById('change-nvda'), d.changePct);
       renderSparkline('spark-nvda', d.closes);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // silent
+    }
   }
 
   async function fetchSPX() {
@@ -147,7 +157,9 @@
       if (el) el.textContent = fmtPrice(d.price, 2);
       applyChange(document.getElementById('change-spx'), d.changePct);
       renderSparkline('spark-spx', d.closes);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // silent
+    }
   }
 
   async function fetchGold() {
@@ -157,7 +169,9 @@
       if (el) el.textContent = fmtPrice(d.price, 2);
       applyChange(document.getElementById('change-gold'), d.changePct);
       renderSparkline('spark-gold', d.closes);
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // silent
+    }
   }
 
   function fetchAll() {
@@ -172,6 +186,8 @@
   fetchAll();
   setInterval(fetchAll, REFRESH_INTERVAL);
 })();
+
+
 
 
 
