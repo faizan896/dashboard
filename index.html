@@ -57,6 +57,17 @@
               <span>Markets</span>
             </a>
           </li>
+          <li>
+            <a href="#" class="nav-link" data-page="research">
+              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                <line x1="11" y1="8" x2="11" y2="14"/>
+                <line x1="8" y1="11" x2="14" y2="11"/>
+              </svg>
+              <span>Research</span>
+            </a>
+          </li>
         </ul>
       </nav>
 
@@ -396,6 +407,34 @@
           </div>
         </div>
 
+        <!-- Stock Research -->
+        <div class="research-section-wrap">
+          <div class="card glass-card" style="margin-bottom:20px;">
+            <div class="card-header">
+              <h2>Stock Research</h2>
+            </div>
+            <div class="research-search-row">
+              <input type="text" id="research-search-input" class="form-field" placeholder="Enter ticker (e.g. AAPL, MSFT, TSLA)" spellcheck="false" autocomplete="off">
+              <button class="btn-primary" id="research-search-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:6px;">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                Search
+              </button>
+            </div>
+          </div>
+
+          <div class="research-loading" id="research-loading" style="display:none;">
+            <div class="research-spinner"></div>
+            <span>Fetching stock data...</span>
+          </div>
+
+          <div class="research-error" id="research-error" style="display:none;"></div>
+
+          <div class="research-results" id="research-results"></div>
+        </div>
+
         <!-- Ondo Global Markets -->
         <div class="ondo-gm-section">
           <div class="card glass-card portfolio-card ondo-card">
@@ -446,9 +485,12 @@
   <script src="expenses.js"></script>
   <script src="portfolio.js"></script>
   <script src="overview.js"></script>
+  <script src="research.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>
+
+
 
 
 
