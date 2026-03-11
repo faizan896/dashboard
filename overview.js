@@ -2,7 +2,7 @@
   'use strict';
 
   var SNAPSHOTS_KEY = 'mm_portfolio_snapshots';
-  var viewMode = 'networth';
+  var viewMode = 'networth'; // 'networth' or 'returns'
 
   function loadSnapshots() {
     try {
@@ -23,6 +23,7 @@
     return '$' + Math.round(n).toLocaleString('en-US');
   }
 
+  // --- Read current portfolio value from DOM ---
   function getPortfolioValueFromDOM(listId) {
     var total = 0;
     var list = document.getElementById(listId);
@@ -66,6 +67,7 @@
     saveSnapshots(snapshots);
   }
 
+  // --- Chart ---
   var overviewChart = null;
 
   function renderChart() {
@@ -74,6 +76,7 @@
 
     var heroVal = document.getElementById('chart-hero-value');
 
+    // Always try to record a snapshot
     recordSnapshot();
 
     if (snapshots.length < 1) {
@@ -190,6 +193,7 @@
     });
   }
 
+  // --- Allocation donut ---
   var allocChart = null;
 
   function renderAllocationChart() {
@@ -251,6 +255,7 @@
       });
     }
 
+    // Legend
     var legendEl = document.getElementById('allocation-legend');
     if (legendEl) {
       var html = '';
@@ -266,6 +271,7 @@
     }
   }
 
+  // --- Toggle ---
   function setupToggle() {
     var btns = document.querySelectorAll('[data-overview]');
     for (var i = 0; i < btns.length; i++) {
@@ -286,7 +292,11 @@
 
   function init() {
     setupToggle();
-    setTimeout(renderAll, 2000);
+    // Wait for portfolio prices to load first
+    setTimeout(renderAll, 4000);
+    // Also retry after 8s in case proxies were slow
+    setTimeout(renderAll, 8000);
+    // Refresh every 15 seconds
     setInterval(renderAll, 15000);
   }
 
@@ -296,3 +306,5 @@
     init();
   }
 })();
+
+
