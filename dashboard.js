@@ -37,6 +37,7 @@
     return total;
   }
 
+  // --- Greeting ---
   function setGreeting() {
     var el = document.getElementById('greeting');
     var dateEl = document.getElementById('page-date');
@@ -54,6 +55,7 @@
     }
   }
 
+  // --- Market status ---
   function updateMarketStatus() {
     var dotEl = document.querySelector('.market-dot');
     var labelEl = document.querySelector('.market-label');
@@ -65,6 +67,7 @@
     var day = now.getUTCDay();
     var totalMin = utcHour * 60 + utcMin;
 
+    // NYSE: 9:30 AM - 4:00 PM ET = 14:30 - 21:00 UTC (approx, ignoring DST)
     var isWeekday = day >= 1 && day <= 5;
     var isOpen = isWeekday && totalMin >= 870 && totalMin < 1260;
 
@@ -77,7 +80,12 @@
     }
   }
 
+  // --- Update stat cards ---
   function updateStats() {
+    // Re-read cash from localStorage in case it was updated
+    cashOnHand = loadNum('mm_cash', 0);
+    monthlyBudget = loadNum('mm_budget', 0);
+
     var cryptoTotal = getPortfolioTotal('crypto-holdings-list');
     var stockTotal = getPortfolioTotal('stock-holdings-list');
     var ondoTotal = getPortfolioTotal('ondo-holdings-list');
@@ -109,6 +117,7 @@
     if (budgetEl) budgetEl.textContent = fmtMoney(monthlyBudget);
   }
 
+  // --- Cash edit ---
   function setupCashEdit() {
     var btn = document.getElementById('edit-cash-btn');
     var form = document.getElementById('cash-edit-form');
@@ -143,6 +152,7 @@
     });
   }
 
+  // --- Budget edit ---
   function setupBudgetEdit() {
     var btn = document.getElementById('edit-budget-btn');
     var form = document.getElementById('budget-edit-form');
@@ -194,6 +204,7 @@
     init();
   }
 })();
+
 
 
 
