@@ -67,16 +67,91 @@
 
   async function fetchStockData(ticker) {
     ticker = ticker.toUpperCase().trim();
-    var modules = 'price,summaryDetail,defaultKeyStatistics,financialData,earningsHistory,earnings,calendarEvents,assetProfile';
-    var url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/'
-      + encodeURIComponent(ticker)
-      + '?modules=' + modules;
 
-    var data = await yahooFetch(url);
-    if (!data || !data.quoteSummary || !data.quoteSummary.result || !data.quoteSummary.result[0]) {
+    // Use Yahoo v8 chart API (still publicly accessible) for price + meta data
+    var chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
+      + encodeURIComponent(ticker)
+      + '?range=1y&interval=1d&includePrePost=false';
+
+    var chartData = await yahooFetch(chartUrl);
+    if (!chartData || !chartData.chart || !chartData.chart.result || !chartData.chart.result[0]) {
       throw new Error('No data found for ' + ticker);
     }
-    return data.quoteSummary.result[0];
+
+    var result = chartData.chart.result[0];
+    var meta = result.meta || {};
+    var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0])
+      ? result.indicators.quote[0].close.filter(function (v) { return v != null; })
+      : [];
+    var volumes = (result.indicators && result.indicators.quote && result.indicators.quote[0])
+      ? result.indicators.quote[0].volume.filter(function (v) { return v != null; })
+      : [];
+    var highs = (result.indicators && result.indicators.quote && result.indicators.quote[0])
+      ? result.indicators.quote[0].high.filter(function (v) { return v != null; })
+      : [];
+    var lows = (result.indicators && result.indicators.quote && result.indicators.quote[0])
+      ? result.indicators.quote[0].low.filter(function (v) { return v != null; })
+      : [];
+
+    var currentPrice = meta.regularMarketPrice;
+    var prevClose = meta.chartPreviousClose || meta.previousClose;
+    var changePct = prevClose ? (currentPrice - prevClose) / prevClose : null;
+
+    var high52 = highs.length ? Math.max.apply(null, highs) : null;
+    var low52 = lows.length ? Math.min.apply(null, lows) : null;
+
+    // Calculate averages
+    var avg50 = null, avg200 = null;
+    if (closes.length >= 50) {
+      var sum50 = 0;
+      for (var i = closes.length - 50; i < closes.length; i++) sum50 += closes[i];
+      avg50 = sum50 / 50;
+    }
+    if (closes.length >= 200) {
+      var sum200 = 0;
+      for (var j = closes.length - 200; j < closes.length; j++) sum200 += closes[j];
+      avg200 = sum200 / 200;
+    }
+
+    var avgVolume = null;
+    if (volumes.length > 0) {
+      var recentVols = volumes.slice(-60);
+      var volSum = 0;
+      for (var k = 0; k < recentVols.length; k++) volSum += recentVols[k];
+      avgVolume = volSum / recentVols.length;
+    }
+
+    var lastVolume = volumes.length > 0 ? volumes[volumes.length - 1] : null;
+
+    // Build a normalized structure compatible with renderResults
+    return {
+      _source: 'chart',
+      price: {
+        shortName: { raw: meta.shortName || meta.symbol || ticker },
+        longName: { raw: meta.longName || '' },
+        regularMarketPrice: { raw: currentPrice },
+        regularMarketPreviousClose: { raw: prevClose },
+        regularMarketChangePercent: { raw: changePct },
+        regularMarketOpen: { raw: meta.regularMarketOpen || null },
+        regularMarketDayHigh: { raw: meta.regularMarketDayHigh || null },
+        regularMarketDayLow: { raw: meta.regularMarketDayLow || null },
+        regularMarketVolume: { raw: lastVolume },
+        averageDailyVolume3Month: { raw: avgVolume },
+        marketCap: { raw: null }
+      },
+      summaryDetail: {
+        fiftyTwoWeekHigh: { raw: high52 },
+        fiftyTwoWeekLow: { raw: low52 },
+        fiftyDayAverage: { raw: avg50 },
+        twoHundredDayAverage: { raw: avg200 }
+      },
+      defaultKeyStatistics: {},
+      financialData: {},
+      assetProfile: {},
+      earnings: {},
+      earningsHistory: {},
+      calendarEvents: {}
+    };
   }
 
   function buildSection(title, rows) {
@@ -116,7 +191,7 @@
     html += '<div class="research-header glass-card">';
     html += '<div class="research-header-left">';
     html += '<h2 class="research-ticker">' + ticker + '</h2>';
-    html += '<span class="research-name">' + (price.shortName || price.longName || ticker) + '</span>';
+    html += '<span class="research-name">' + (raw(price.shortName) || raw(price.longName) || ticker) + '</span>';
     if (profile.sector) {
       html += '<span class="research-sector">' + profile.sector + (profile.industry ? ' &bull; ' + profile.industry : '') + '</span>';
     }
@@ -293,5 +368,6 @@
     if (e.key === 'Enter') doSearch();
   });
 })();
+
 
 
