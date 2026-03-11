@@ -103,15 +103,15 @@
       });
       var currentReturn = values[values.length - 1];
       labelText = (currentReturn >= 0 ? '+' : '') + currentReturn.toFixed(2) + '%';
-      lineColor = currentReturn >= 0 ? '#10b981' : '#ef4444';
-      fillColor = currentReturn >= 0 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+      lineColor = currentReturn >= 0 ? '#22d3a7' : '#f0465a';
+      fillColor = currentReturn >= 0 ? 'rgba(34, 211, 167, 0.08)' : 'rgba(240, 70, 90, 0.08)';
     } else {
       values = snapshots.map(function (s) { return s.value; });
       var currentVal = values[values.length - 1];
       labelText = fmtMoney(currentVal);
       var isUp = values.length >= 2 ? values[values.length - 1] >= values[0] : true;
-      lineColor = isUp ? '#10b981' : '#ef4444';
-      fillColor = isUp ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.08)';
+      lineColor = isUp ? '#22d3a7' : '#f0465a';
+      fillColor = isUp ? 'rgba(34, 211, 167, 0.08)' : 'rgba(240, 70, 90, 0.08)';
     }
 
     if (heroVal) heroVal.textContent = labelText;
@@ -158,7 +158,7 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1a1a25',
+            backgroundColor: '#151a2e',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 14, weight: '600' },
             padding: 14,
@@ -175,13 +175,13 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#5e5e78', font: { size: 11 }, maxTicksLimit: 8 }
+            ticks: { color: '#505872', font: { size: 11 }, maxTicksLimit: 8 }
           },
           y: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
+            grid: { color: 'rgba(255,255,255,0.03)' },
             border: { display: false },
             ticks: {
-              color: '#5e5e78',
+              color: '#505872',
               font: { size: 11 },
               callback: viewMode === 'returns'
                 ? function (v) { return v.toFixed(1) + '%'; }
@@ -213,7 +213,7 @@
 
     var data = [cash, crypto, stocks, ondo];
     var labels = ['Cash', 'Crypto', 'Stocks', 'Ondo GM'];
-    var colors = ['#3b82f6', '#f59e0b', '#8b5cf6', '#0052FF'];
+    var colors = ['#4d8df5', '#f6c857', '#9f7aea', '#4d8df5'];
 
     if (allocChart) {
       allocChart.data.datasets[0].data = data;
@@ -227,7 +227,7 @@
             data: data,
             backgroundColor: colors,
             borderWidth: 3,
-            borderColor: '#111119',
+            borderColor: '#0d1120',
             hoverOffset: 8
           }]
         },
@@ -238,7 +238,7 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1a1a25',
+              backgroundColor: '#151a2e',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
@@ -306,5 +306,6 @@
     init();
   }
 })();
+
 
 
