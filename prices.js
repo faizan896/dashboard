@@ -53,8 +53,8 @@
       bar.className = 'spark-bar';
       bar.style.height = Math.max(10, pct) + '%';
       bar.style.background = isUp
-        ? 'rgba(16, 185, 129, 0.5)'
-        : 'rgba(239, 68, 68, 0.5)';
+        ? 'rgba(34, 211, 167, 0.45)'
+        : 'rgba(240, 70, 90, 0.45)';
       el.appendChild(bar);
     }
   }
@@ -186,6 +186,7 @@
   fetchAll();
   setInterval(fetchAll, REFRESH_INTERVAL);
 })();
+
 
 
 
