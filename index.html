@@ -125,210 +125,292 @@
 
       <!-- Dashboard Content -->
       <div class="content">
-        <!-- Finance Stats -->
-        <div class="stats-row anim-stagger">
-          <div class="stat-card glow-card">
-            <div class="stat-icon stat-icon-networth">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-            </div>
-            <div class="stat-body">
-              <div class="stat-label">Net Worth</div>
-              <div class="stat-value" id="stat-networth">$0</div>
-              <div class="stat-change" id="stat-networth-sub">Cash + Investments</div>
-            </div>
-          </div>
-          <div class="stat-card glow-card clickable" id="cash-card">
-            <div class="stat-icon stat-icon-cash">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            </div>
-            <div class="stat-body">
-              <div class="stat-label">Cash on Hand</div>
-              <div class="stat-value" id="stat-cash">$0</div>
-              <div class="stat-change" id="stat-cash-sub">
-                <button class="edit-btn" id="edit-cash-btn">Edit</button>
+
+        <!-- ==================== OVERVIEW PAGE ==================== -->
+        <section class="page-section active" data-section="overview">
+
+          <!-- Finance Stats -->
+          <div class="stats-row anim-stagger">
+            <div class="stat-card glow-card">
+              <div class="stat-icon stat-icon-networth">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              </div>
+              <div class="stat-body">
+                <div class="stat-label">Net Worth</div>
+                <div class="stat-value" id="stat-networth">$0</div>
+                <div class="stat-change" id="stat-networth-sub">Cash + Investments</div>
               </div>
             </div>
-          </div>
-          <div class="stat-card glow-card">
-            <div class="stat-icon stat-icon-invested">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-            </div>
-            <div class="stat-body">
-              <div class="stat-label">Total Invested</div>
-              <div class="stat-value" id="stat-invested">$0</div>
-              <div class="stat-change" id="stat-invested-sub">Crypto + Stocks + Ondo GM</div>
-            </div>
-          </div>
-          <div class="stat-card glow-card clickable" id="budget-card">
-            <div class="stat-icon stat-icon-budget">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
-            </div>
-            <div class="stat-body">
-              <div class="stat-label">Monthly Budget</div>
-              <div class="stat-value" id="stat-budget">$0</div>
-              <div class="stat-change" id="stat-budget-sub">
-                <button class="edit-btn" id="edit-budget-btn">Edit</button>
+            <div class="stat-card glow-card clickable" id="cash-card">
+              <div class="stat-icon stat-icon-cash">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              </div>
+              <div class="stat-body">
+                <div class="stat-label">Cash on Hand</div>
+                <div class="stat-value" id="stat-cash">$0</div>
+                <div class="stat-change" id="stat-cash-sub">
+                  <button class="edit-btn" id="edit-cash-btn">Edit</button>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-
-        <!-- Cash Edit Modal -->
-        <div class="inline-edit-form" id="cash-edit-form">
-          <label>Cash on Hand ($)</label>
-          <input type="number" id="cash-input" min="0" step="any" placeholder="e.g. 5000">
-          <div class="inline-edit-actions">
-            <button class="btn-primary" id="cash-save">Save</button>
-            <button class="btn-ghost" id="cash-cancel">Cancel</button>
-          </div>
-        </div>
-
-        <!-- Budget Edit Modal -->
-        <div class="inline-edit-form" id="budget-edit-form">
-          <label>Monthly Budget ($)</label>
-          <input type="number" id="budget-input" min="0" step="any" placeholder="e.g. 4000">
-          <div class="inline-edit-actions">
-            <button class="btn-primary" id="budget-save">Save</button>
-            <button class="btn-ghost" id="budget-cancel">Cancel</button>
-          </div>
-        </div>
-
-        <!-- Portfolio Overview Chart -->
-        <div class="card glass-card chart-hero anim-slide">
-          <div class="card-header">
-            <div class="card-title-group">
-              <h2>Portfolio Overview</h2>
-              <span class="chart-hero-value" id="chart-hero-value">$0</span>
-            </div>
-            <div class="card-actions">
-              <button class="tab-btn active" data-overview="networth">Net Worth</button>
-              <button class="tab-btn" data-overview="returns">Returns</button>
-            </div>
-          </div>
-          <div class="chart-hero-wrap">
-            <canvas id="overview-chart"></canvas>
-          </div>
-        </div>
-
-        <!-- Price Widgets -->
-        <div class="price-widgets anim-stagger">
-          <!-- Bitcoin -->
-          <div class="price-widget glass-card" id="widget-btc">
-            <div class="widget-left">
-              <div class="widget-logo logo-btc">
-                <svg viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="16" fill="#F7931A"/>
-                  <path d="M21.2 13.8c.3-2-1.2-3.1-3.3-3.8l.7-2.7-1.6-.4-.7 2.7c-.4-.1-.8-.2-1.3-.3l.7-2.7-1.6-.4-.7 2.7c-.3-.1-.7-.2-1-.3l-2.3-.6-.4 1.7s1.2.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 0 .1 0 .2.1h-.2l-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 1.9 2.1.5c.4.1.8.2 1.2.3l-.7 2.8 1.6.4.7-2.7c.4.1.9.2 1.3.3l-.7 2.7 1.6.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1 0-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.4zm-3.8 5.3c-.5 2.1-4 1-5.1.7l.9-3.7c1.1.3 4.7.8 4.2 3zm.5-5.4c-.5 1.9-3.4.9-4.3.7l.8-3.3c1 .2 4 .7 3.5 2.6z" fill="white"/>
-                </svg>
+            <div class="stat-card glow-card">
+              <div class="stat-icon stat-icon-invested">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
               </div>
-              <div class="widget-info">
-                <span class="widget-name">Bitcoin</span>
-                <span class="widget-ticker">BTC/USD</span>
+              <div class="stat-body">
+                <div class="stat-label">Total Invested</div>
+                <div class="stat-value" id="stat-invested">$0</div>
+                <div class="stat-change" id="stat-invested-sub">Crypto + Stocks + Ondo GM</div>
               </div>
             </div>
-            <div class="widget-right">
-              <span class="widget-price" id="price-btc">--</span>
-              <span class="widget-change" id="change-btc">&mdash;</span>
+            <div class="stat-card glow-card clickable" id="budget-card">
+              <div class="stat-icon stat-icon-budget">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
+              </div>
+              <div class="stat-body">
+                <div class="stat-label">Monthly Budget</div>
+                <div class="stat-value" id="stat-budget">$0</div>
+                <div class="stat-change" id="stat-budget-sub">
+                  <button class="edit-btn" id="edit-budget-btn">Edit</button>
+                </div>
+              </div>
             </div>
-            <div class="widget-sparkline" id="spark-btc"></div>
           </div>
 
-          <!-- NVIDIA -->
-          <div class="price-widget glass-card" id="widget-nvda">
-            <div class="widget-left">
-              <div class="widget-logo logo-nvda">
-                <svg viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="16" fill="#76B900"/>
-                  <path d="M13 12.5v7.5s-1.5-.3-2.5-1.5c-1.2-1.5-1-3.8.3-5.1.6-.5 1.4-.8 2.2-.9zm1.5-.5v9c2.5-.2 4.5-1.8 5.3-3.5.9-2 .5-4.2-1-5.5-1.1-.9-2.6-1.2-4.3-1v1zm-5.5 2c-1.5 2.2-1.2 5.2.7 7 1.5 1.4 3.5 2 5.3 2 3 0 5.5-1.8 6.8-4.3 1-2 .8-4.5-.5-6.3-1.5-2-4-3.2-6.8-3.2-.5 0-1 0-1.5.1v-1.5l1.5-.1c3.5 0 6.5 1.6 8.2 4 1.5 2.2 1.8 5 .5 7.5-1.5 3-4.8 5.2-8.7 5.2-2.5 0-4.8-.8-6.5-2.5-2-2-2.8-5.2-1.5-7.8h2.5z" fill="white"/>
-                </svg>
-              </div>
-              <div class="widget-info">
-                <span class="widget-name">NVIDIA</span>
-                <span class="widget-ticker">NVDA</span>
-              </div>
+          <!-- Cash Edit Modal -->
+          <div class="inline-edit-form" id="cash-edit-form">
+            <label>Cash on Hand ($)</label>
+            <input type="number" id="cash-input" min="0" step="any" placeholder="e.g. 5000">
+            <div class="inline-edit-actions">
+              <button class="btn-primary" id="cash-save">Save</button>
+              <button class="btn-ghost" id="cash-cancel">Cancel</button>
             </div>
-            <div class="widget-right">
-              <span class="widget-price" id="price-nvda">--</span>
-              <span class="widget-change" id="change-nvda">&mdash;</span>
-            </div>
-            <div class="widget-sparkline" id="spark-nvda"></div>
           </div>
 
-          <!-- S&P 500 -->
-          <div class="price-widget glass-card" id="widget-spx">
-            <div class="widget-left">
-              <div class="widget-logo logo-spx">
-                <svg viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="16" fill="#1c3d6e"/>
-                  <path d="M8 22l4-5 3 3 4-7 5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-              </div>
-              <div class="widget-info">
-                <span class="widget-name">S&amp;P 500</span>
-                <span class="widget-ticker">SPX</span>
-              </div>
+          <!-- Budget Edit Modal -->
+          <div class="inline-edit-form" id="budget-edit-form">
+            <label>Monthly Budget ($)</label>
+            <input type="number" id="budget-input" min="0" step="any" placeholder="e.g. 4000">
+            <div class="inline-edit-actions">
+              <button class="btn-primary" id="budget-save">Save</button>
+              <button class="btn-ghost" id="budget-cancel">Cancel</button>
             </div>
-            <div class="widget-right">
-              <span class="widget-price" id="price-spx">--</span>
-              <span class="widget-change" id="change-spx">&mdash;</span>
-            </div>
-            <div class="widget-sparkline" id="spark-spx"></div>
           </div>
 
-          <!-- Gold -->
-          <div class="price-widget glass-card" id="widget-gold">
-            <div class="widget-left">
-              <div class="widget-logo logo-gold">
-                <svg viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="16" fill="#D4A017"/>
-                  <path d="M11 21h10l2-5h-3l-1-3h-2l-1-3h-1l-1 3h-2l-1 3H8l3 5z" fill="white" opacity="0.9"/>
-                  <path d="M13 21v2h6v-2" stroke="white" stroke-width="1" fill="none"/>
-                </svg>
-              </div>
-              <div class="widget-info">
-                <span class="widget-name">Gold</span>
-                <span class="widget-ticker">XAU/USD</span>
-              </div>
-            </div>
-            <div class="widget-right">
-              <span class="widget-price" id="price-gold">--</span>
-              <span class="widget-change" id="change-gold">&mdash;</span>
-            </div>
-            <div class="widget-sparkline" id="spark-gold"></div>
-          </div>
-        </div>
-
-        <!-- Portfolio Allocation + Expenses Summary -->
-        <div class="duo-row anim-stagger">
-          <!-- Portfolio Allocation -->
-          <div class="card glass-card">
+          <!-- Portfolio Overview Chart -->
+          <div class="card glass-card chart-hero anim-slide">
             <div class="card-header">
-              <h2>Allocation</h2>
-            </div>
-            <div class="allocation-chart-wrap">
-              <canvas id="allocation-chart"></canvas>
-            </div>
-            <div class="allocation-legend" id="allocation-legend"></div>
-          </div>
-
-          <!-- Expenses Summary -->
-          <div class="card glass-card">
-            <div class="card-header">
-              <h2>Monthly Expenses</h2>
+              <div class="card-title-group">
+                <h2>Portfolio Overview</h2>
+                <span class="chart-hero-value" id="chart-hero-value">$0</span>
+              </div>
               <div class="card-actions">
-                <button class="tab-btn active" data-exp-range="3">3M</button>
-                <button class="tab-btn" data-exp-range="6">6M</button>
-                <button class="tab-btn" data-exp-range="12">1Y</button>
+                <button class="tab-btn active" data-overview="networth">Net Worth</button>
+                <button class="tab-btn" data-overview="returns">Returns</button>
               </div>
             </div>
-            <div class="expenses-chart-wrap">
-              <canvas id="expenses-bar-chart"></canvas>
+            <div class="chart-hero-wrap">
+              <canvas id="overview-chart"></canvas>
             </div>
           </div>
-        </div>
 
-        <!-- Expenses Entry Section -->
-        <div class="expenses-section">
+          <!-- Quick Glance: Allocation -->
+          <div class="duo-row anim-stagger">
+            <div class="card glass-card">
+              <div class="card-header">
+                <h2>Allocation</h2>
+              </div>
+              <div class="allocation-chart-wrap">
+                <canvas id="allocation-chart"></canvas>
+              </div>
+              <div class="allocation-legend" id="allocation-legend"></div>
+            </div>
+
+            <div class="card glass-card">
+              <div class="card-header">
+                <h2>Monthly Expenses</h2>
+                <div class="card-actions">
+                  <button class="tab-btn active" data-exp-range="3">3M</button>
+                  <button class="tab-btn" data-exp-range="6">6M</button>
+                  <button class="tab-btn" data-exp-range="12">1Y</button>
+                </div>
+              </div>
+              <div class="expenses-chart-wrap">
+                <canvas id="expenses-bar-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==================== PORTFOLIO PAGE ==================== -->
+        <section class="page-section" data-section="portfolio">
+
+          <!-- Price Widgets (compact) -->
+          <div class="price-widgets anim-stagger">
+            <div class="price-widget glass-card" id="widget-btc">
+              <div class="widget-left">
+                <div class="widget-logo logo-btc">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#F7931A"/>
+                    <path d="M21.2 13.8c.3-2-1.2-3.1-3.3-3.8l.7-2.7-1.6-.4-.7 2.7c-.4-.1-.8-.2-1.3-.3l.7-2.7-1.6-.4-.7 2.7c-.3-.1-.7-.2-1-.3l-2.3-.6-.4 1.7s1.2.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 0 .1 0 .2.1h-.2l-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 1.9 2.1.5c.4.1.8.2 1.2.3l-.7 2.8 1.6.4.7-2.7c.4.1.9.2 1.3.3l-.7 2.7 1.6.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1 0-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.4zm-3.8 5.3c-.5 2.1-4 1-5.1.7l.9-3.7c1.1.3 4.7.8 4.2 3zm.5-5.4c-.5 1.9-3.4.9-4.3.7l.8-3.3c1 .2 4 .7 3.5 2.6z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="widget-info">
+                  <span class="widget-name">Bitcoin</span>
+                  <span class="widget-ticker">BTC/USD</span>
+                </div>
+              </div>
+              <div class="widget-right">
+                <span class="widget-price" id="price-btc">--</span>
+                <span class="widget-change" id="change-btc">&mdash;</span>
+              </div>
+              <div class="widget-sparkline" id="spark-btc"></div>
+            </div>
+
+            <div class="price-widget glass-card" id="widget-nvda">
+              <div class="widget-left">
+                <div class="widget-logo logo-nvda">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#76B900"/>
+                    <path d="M13 12.5v7.5s-1.5-.3-2.5-1.5c-1.2-1.5-1-3.8.3-5.1.6-.5 1.4-.8 2.2-.9zm1.5-.5v9c2.5-.2 4.5-1.8 5.3-3.5.9-2 .5-4.2-1-5.5-1.1-.9-2.6-1.2-4.3-1v1zm-5.5 2c-1.5 2.2-1.2 5.2.7 7 1.5 1.4 3.5 2 5.3 2 3 0 5.5-1.8 6.8-4.3 1-2 .8-4.5-.5-6.3-1.5-2-4-3.2-6.8-3.2-.5 0-1 0-1.5.1v-1.5l1.5-.1c3.5 0 6.5 1.6 8.2 4 1.5 2.2 1.8 5 .5 7.5-1.5 3-4.8 5.2-8.7 5.2-2.5 0-4.8-.8-6.5-2.5-2-2-2.8-5.2-1.5-7.8h2.5z" fill="white"/>
+                  </svg>
+                </div>
+                <div class="widget-info">
+                  <span class="widget-name">NVIDIA</span>
+                  <span class="widget-ticker">NVDA</span>
+                </div>
+              </div>
+              <div class="widget-right">
+                <span class="widget-price" id="price-nvda">--</span>
+                <span class="widget-change" id="change-nvda">&mdash;</span>
+              </div>
+              <div class="widget-sparkline" id="spark-nvda"></div>
+            </div>
+
+            <div class="price-widget glass-card" id="widget-spx">
+              <div class="widget-left">
+                <div class="widget-logo logo-spx">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#1c3d6e"/>
+                    <path d="M8 22l4-5 3 3 4-7 5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </div>
+                <div class="widget-info">
+                  <span class="widget-name">S&amp;P 500</span>
+                  <span class="widget-ticker">SPX</span>
+                </div>
+              </div>
+              <div class="widget-right">
+                <span class="widget-price" id="price-spx">--</span>
+                <span class="widget-change" id="change-spx">&mdash;</span>
+              </div>
+              <div class="widget-sparkline" id="spark-spx"></div>
+            </div>
+
+            <div class="price-widget glass-card" id="widget-gold">
+              <div class="widget-left">
+                <div class="widget-logo logo-gold">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#D4A017"/>
+                    <path d="M11 21h10l2-5h-3l-1-3h-2l-1-3h-1l-1 3h-2l-1 3H8l3 5z" fill="white" opacity="0.9"/>
+                    <path d="M13 21v2h6v-2" stroke="white" stroke-width="1" fill="none"/>
+                  </svg>
+                </div>
+                <div class="widget-info">
+                  <span class="widget-name">Gold</span>
+                  <span class="widget-ticker">XAU/USD</span>
+                </div>
+              </div>
+              <div class="widget-right">
+                <span class="widget-price" id="price-gold">--</span>
+                <span class="widget-change" id="change-gold">&mdash;</span>
+              </div>
+              <div class="widget-sparkline" id="spark-gold"></div>
+            </div>
+          </div>
+
+          <!-- Portfolio Holdings -->
+          <div class="portfolio-row anim-stagger">
+            <div class="card glass-card portfolio-card">
+              <div class="card-header">
+                <h2>Crypto Holdings</h2>
+                <button class="btn-accent" id="add-crypto-btn">+ Add</button>
+              </div>
+              <div class="add-holding-form" id="add-crypto-form">
+                <input type="text" name="coin-id" placeholder="CoinGecko ID (e.g. bitcoin)">
+                <input type="text" name="coin-ticker" placeholder="Ticker (e.g. BTC)">
+                <input type="text" name="coin-name" placeholder="Name (optional)">
+                <input type="number" name="coin-qty" placeholder="Qty held (optional)" min="0" step="any">
+                <button class="btn-primary">Add Coin</button>
+              </div>
+              <div class="holdings-list" id="crypto-holdings-list"></div>
+            </div>
+
+            <div class="card glass-card portfolio-card">
+              <div class="card-header">
+                <h2>Stock Holdings</h2>
+                <button class="btn-accent" id="add-stock-btn">+ Add</button>
+              </div>
+              <div class="add-holding-form" id="add-stock-form">
+                <input type="text" name="stock-symbol" placeholder="Ticker (e.g. AAPL)">
+                <input type="text" name="stock-name" placeholder="Name (optional)">
+                <input type="number" name="stock-qty" placeholder="Shares held (optional)" min="0" step="any">
+                <button class="btn-primary">Add Stock</button>
+              </div>
+              <div class="holdings-list" id="stock-holdings-list"></div>
+            </div>
+          </div>
+
+          <!-- Ondo Global Markets -->
+          <div class="ondo-gm-section">
+            <div class="card glass-card portfolio-card ondo-card">
+              <div class="card-header">
+                <div class="ondo-header-left">
+                  <svg class="ondo-logo" viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#0052FF"/>
+                    <circle cx="16" cy="16" r="8" stroke="white" stroke-width="2.5" fill="none"/>
+                    <circle cx="16" cy="16" r="3" fill="white"/>
+                  </svg>
+                  <h2>Ondo Global Markets</h2>
+                  <span class="ondo-badge">RWA</span>
+                </div>
+                <div class="ondo-header-actions">
+                  <button class="ondo-wallet-toggle" id="ondo-wallet-toggle-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                      <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
+                    </svg>
+                    Wallet
+                  </button>
+                  <button class="btn-accent" id="add-ondo-btn">+ Add</button>
+                </div>
+              </div>
+              <div class="ondo-wallet-panel" id="ondo-wallet-panel">
+                <div class="wallet-input-row">
+                  <input type="text" id="ondo-wallet-input" placeholder="Enter Ethereum wallet address (0x...)" spellcheck="false" autocomplete="off">
+                  <button class="btn-primary" id="ondo-wallet-scan-btn">Scan</button>
+                  <button class="btn-ghost" id="ondo-wallet-clear-btn" style="display:none;">Clear</button>
+                </div>
+                <div class="wallet-status" id="ondo-wallet-status"></div>
+                <div class="wallet-holdings-list" id="ondo-wallet-holdings"></div>
+              </div>
+              <div class="add-holding-form" id="add-ondo-form">
+                <input type="text" name="ondo-symbol" placeholder="Symbol (e.g. AAPLON, NVDAON)">
+                <input type="text" name="ondo-name" placeholder="Name (optional)">
+                <input type="number" name="ondo-qty" placeholder="Tokens held (optional)" min="0" step="any">
+                <button class="btn-primary">Add Tokenized Stock</button>
+              </div>
+              <div class="holdings-list" id="ondo-holdings-list"></div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==================== EXPENSES PAGE ==================== -->
+        <section class="page-section" data-section="expenses">
+
           <div class="expenses-summary anim-stagger">
             <div class="expense-stat glass-card">
               <div class="expense-stat-label">Total Expenses</div>
@@ -347,7 +429,7 @@
             </div>
           </div>
 
-          <div class="card glass-card" style="margin-bottom:20px;">
+          <div class="card glass-card" style="margin-bottom:24px;">
             <div class="card-header">
               <h2>Add Expense</h2>
             </div>
@@ -389,45 +471,94 @@
               <div class="expenses-legend" id="expenses-legend"></div>
             </div>
           </div>
-        </div>
 
-        <!-- Portfolio Holdings -->
-        <div class="portfolio-row anim-stagger">
-          <!-- Crypto -->
-          <div class="card glass-card portfolio-card">
-            <div class="card-header">
-              <h2>Crypto Holdings</h2>
-              <button class="btn-accent" id="add-crypto-btn">+ Add</button>
-            </div>
-            <div class="add-holding-form" id="add-crypto-form">
-              <input type="text" name="coin-id" placeholder="CoinGecko ID (e.g. bitcoin)">
-              <input type="text" name="coin-ticker" placeholder="Ticker (e.g. BTC)">
-              <input type="text" name="coin-name" placeholder="Name (optional)">
-              <input type="number" name="coin-qty" placeholder="Qty held (optional)" min="0" step="any">
-              <button class="btn-primary">Add Coin</button>
-            </div>
-            <div class="holdings-list" id="crypto-holdings-list"></div>
+        </section>
+
+        <!-- ==================== MARKETS PAGE ==================== -->
+        <section class="page-section" data-section="markets">
+
+          <div class="section-intro">
+            <h2 class="section-heading">Live Markets</h2>
+            <p class="section-desc">Real-time prices updated every 60 seconds</p>
           </div>
 
-          <!-- Stocks -->
-          <div class="card glass-card portfolio-card">
-            <div class="card-header">
-              <h2>Stock Holdings</h2>
-              <button class="btn-accent" id="add-stock-btn">+ Add</button>
+          <div class="markets-grid anim-stagger">
+            <div class="market-card glass-card">
+              <div class="market-card-top">
+                <div class="widget-logo logo-btc">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#F7931A"/>
+                    <path d="M21.2 13.8c.3-2-1.2-3.1-3.3-3.8l.7-2.7-1.6-.4-.7 2.7c-.4-.1-.8-.2-1.3-.3l.7-2.7-1.6-.4-.7 2.7c-.3-.1-.7-.2-1-.3l-2.3-.6-.4 1.7s1.2.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 0 .1 0 .2.1h-.2l-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 1.9 2.1.5c.4.1.8.2 1.2.3l-.7 2.8 1.6.4.7-2.7c.4.1.9.2 1.3.3l-.7 2.7 1.6.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1 0-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.4zm-3.8 5.3c-.5 2.1-4 1-5.1.7l.9-3.7c1.1.3 4.7.8 4.2 3zm.5-5.4c-.5 1.9-3.4.9-4.3.7l.8-3.3c1 .2 4 .7 3.5 2.6z" fill="white"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="market-card-name">Bitcoin</div>
+                  <div class="market-card-ticker">BTC/USD</div>
+                </div>
+              </div>
+              <div class="market-card-price" id="market-price-btc">--</div>
+              <div class="market-card-change" id="market-change-btc">&mdash;</div>
             </div>
-            <div class="add-holding-form" id="add-stock-form">
-              <input type="text" name="stock-symbol" placeholder="Ticker (e.g. AAPL)">
-              <input type="text" name="stock-name" placeholder="Name (optional)">
-              <input type="number" name="stock-qty" placeholder="Shares held (optional)" min="0" step="any">
-              <button class="btn-primary">Add Stock</button>
-            </div>
-            <div class="holdings-list" id="stock-holdings-list"></div>
-          </div>
-        </div>
 
-        <!-- Stock Research -->
-        <div class="research-section-wrap">
-          <div class="card glass-card" style="margin-bottom:20px;">
+            <div class="market-card glass-card">
+              <div class="market-card-top">
+                <div class="widget-logo logo-nvda">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#76B900"/>
+                    <path d="M13 12.5v7.5s-1.5-.3-2.5-1.5c-1.2-1.5-1-3.8.3-5.1.6-.5 1.4-.8 2.2-.9zm1.5-.5v9c2.5-.2 4.5-1.8 5.3-3.5.9-2 .5-4.2-1-5.5-1.1-.9-2.6-1.2-4.3-1v1zm-5.5 2c-1.5 2.2-1.2 5.2.7 7 1.5 1.4 3.5 2 5.3 2 3 0 5.5-1.8 6.8-4.3 1-2 .8-4.5-.5-6.3-1.5-2-4-3.2-6.8-3.2-.5 0-1 0-1.5.1v-1.5l1.5-.1c3.5 0 6.5 1.6 8.2 4 1.5 2.2 1.8 5 .5 7.5-1.5 3-4.8 5.2-8.7 5.2-2.5 0-4.8-.8-6.5-2.5-2-2-2.8-5.2-1.5-7.8h2.5z" fill="white"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="market-card-name">NVIDIA</div>
+                  <div class="market-card-ticker">NVDA</div>
+                </div>
+              </div>
+              <div class="market-card-price" id="market-price-nvda">--</div>
+              <div class="market-card-change" id="market-change-nvda">&mdash;</div>
+            </div>
+
+            <div class="market-card glass-card">
+              <div class="market-card-top">
+                <div class="widget-logo logo-spx">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#1c3d6e"/>
+                    <path d="M8 22l4-5 3 3 4-7 5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="market-card-name">S&amp;P 500</div>
+                  <div class="market-card-ticker">SPX</div>
+                </div>
+              </div>
+              <div class="market-card-price" id="market-price-spx">--</div>
+              <div class="market-card-change" id="market-change-spx">&mdash;</div>
+            </div>
+
+            <div class="market-card glass-card">
+              <div class="market-card-top">
+                <div class="widget-logo logo-gold">
+                  <svg viewBox="0 0 32 32" fill="none">
+                    <circle cx="16" cy="16" r="16" fill="#D4A017"/>
+                    <path d="M11 21h10l2-5h-3l-1-3h-2l-1-3h-1l-1 3h-2l-1 3H8l3 5z" fill="white" opacity="0.9"/>
+                    <path d="M13 21v2h6v-2" stroke="white" stroke-width="1" fill="none"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="market-card-name">Gold</div>
+                  <div class="market-card-ticker">XAU/USD</div>
+                </div>
+              </div>
+              <div class="market-card-price" id="market-price-gold">--</div>
+              <div class="market-card-change" id="market-change-gold">&mdash;</div>
+            </div>
+          </div>
+
+        </section>
+
+        <!-- ==================== RESEARCH PAGE ==================== -->
+        <section class="page-section" data-section="research">
+
+          <div class="card glass-card" style="margin-bottom:24px;">
             <div class="card-header">
               <h2>Stock Research</h2>
             </div>
@@ -451,51 +582,9 @@
           <div class="research-error" id="research-error" style="display:none;"></div>
 
           <div class="research-results" id="research-results"></div>
-        </div>
 
-        <!-- Ondo Global Markets -->
-        <div class="ondo-gm-section">
-          <div class="card glass-card portfolio-card ondo-card">
-            <div class="card-header">
-              <div class="ondo-header-left">
-                <svg class="ondo-logo" viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="16" r="16" fill="#0052FF"/>
-                  <circle cx="16" cy="16" r="8" stroke="white" stroke-width="2.5" fill="none"/>
-                  <circle cx="16" cy="16" r="3" fill="white"/>
-                </svg>
-                <h2>Ondo Global Markets</h2>
-                <span class="ondo-badge">RWA</span>
-              </div>
-              <div class="ondo-header-actions">
-                <button class="ondo-wallet-toggle" id="ondo-wallet-toggle-btn">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-                    <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
-                  </svg>
-                  Wallet
-                </button>
-                <button class="btn-accent" id="add-ondo-btn">+ Add</button>
-              </div>
-            </div>
-            <div class="ondo-wallet-panel" id="ondo-wallet-panel">
-              <div class="wallet-input-row">
-                <input type="text" id="ondo-wallet-input" placeholder="Enter Ethereum wallet address (0x...)" spellcheck="false" autocomplete="off">
-                <button class="btn-primary" id="ondo-wallet-scan-btn">Scan</button>
-                <button class="btn-ghost" id="ondo-wallet-clear-btn" style="display:none;">Clear</button>
-              </div>
-              <div class="wallet-status" id="ondo-wallet-status"></div>
-              <div class="wallet-holdings-list" id="ondo-wallet-holdings"></div>
-            </div>
-            <div class="add-holding-form" id="add-ondo-form">
-              <input type="text" name="ondo-symbol" placeholder="Symbol (e.g. AAPLON, NVDAON)">
-              <input type="text" name="ondo-name" placeholder="Name (optional)">
-              <input type="number" name="ondo-qty" placeholder="Tokens held (optional)" min="0" step="any">
-              <button class="btn-primary">Add Tokenized Stock</button>
-            </div>
-            <div class="holdings-list" id="ondo-holdings-list"></div>
-          </div>
-        </div>
+        </section>
+
       </div>
     </div>
   </div>
@@ -507,7 +596,6 @@
   <script src="dashboard.js"></script>
 </body>
 </html>
-
 
 
 
