@@ -67,7 +67,6 @@
     var day = now.getUTCDay();
     var totalMin = utcHour * 60 + utcMin;
 
-    // NYSE: 9:30 AM - 4:00 PM ET = 14:30 - 21:00 UTC (approx, ignoring DST)
     var isWeekday = day >= 1 && day <= 5;
     var isOpen = isWeekday && totalMin >= 870 && totalMin < 1260;
 
@@ -82,7 +81,6 @@
 
   // --- Update stat cards ---
   function updateStats() {
-    // Re-read cash from localStorage in case it was updated
     cashOnHand = loadNum('mm_cash', 0);
     monthlyBudget = loadNum('mm_budget', 0);
 
@@ -187,15 +185,75 @@
     });
   }
 
+  // --- Page Navigation ---
+  function setupPageNav() {
+    var navLinks = document.querySelectorAll('.nav-link[data-page]');
+    var sections = document.querySelectorAll('.page-section[data-section]');
+
+    function switchPage(pageName) {
+      // Update nav
+      for (var i = 0; i < navLinks.length; i++) {
+        navLinks[i].classList.toggle('active', navLinks[i].getAttribute('data-page') === pageName);
+      }
+      // Update sections
+      for (var j = 0; j < sections.length; j++) {
+        var isActive = sections[j].getAttribute('data-section') === pageName;
+        sections[j].classList.toggle('active', isActive);
+      }
+      // Save current page
+      try { localStorage.setItem('mm_current_page', pageName); } catch (e) { /* ignore */ }
+    }
+
+    for (var i = 0; i < navLinks.length; i++) {
+      navLinks[i].addEventListener('click', function (e) {
+        e.preventDefault();
+        switchPage(this.getAttribute('data-page'));
+      });
+    }
+
+    // Restore last page
+    var savedPage = null;
+    try { savedPage = localStorage.getItem('mm_current_page'); } catch (e) { /* ignore */ }
+    if (savedPage) {
+      switchPage(savedPage);
+    }
+  }
+
+  // --- Sync market prices to Markets page ---
+  function syncMarketPrices() {
+    var pairs = [
+      { src: 'price-btc', dst: 'market-price-btc', changeSrc: 'change-btc', changeDst: 'market-change-btc' },
+      { src: 'price-nvda', dst: 'market-price-nvda', changeSrc: 'change-nvda', changeDst: 'market-change-nvda' },
+      { src: 'price-spx', dst: 'market-price-spx', changeSrc: 'change-spx', changeDst: 'market-change-spx' },
+      { src: 'price-gold', dst: 'market-price-gold', changeSrc: 'change-gold', changeDst: 'market-change-gold' }
+    ];
+
+    for (var i = 0; i < pairs.length; i++) {
+      var srcEl = document.getElementById(pairs[i].src);
+      var dstEl = document.getElementById(pairs[i].dst);
+      if (srcEl && dstEl) dstEl.textContent = srcEl.textContent;
+
+      var changeSrc = document.getElementById(pairs[i].changeSrc);
+      var changeDst = document.getElementById(pairs[i].changeDst);
+      if (changeSrc && changeDst) {
+        changeDst.textContent = changeSrc.textContent;
+        changeDst.className = changeSrc.className.replace('widget-change', 'market-card-change');
+      }
+    }
+  }
+
   function init() {
     setGreeting();
     updateMarketStatus();
     setupCashEdit();
     setupBudgetEdit();
+    setupPageNav();
     updateStats();
 
     setInterval(updateStats, 5000);
     setInterval(updateMarketStatus, 60000);
+    setInterval(syncMarketPrices, 3000);
+    setTimeout(syncMarketPrices, 5000);
   }
 
   if (document.readyState === 'loading') {
@@ -204,6 +262,7 @@
     init();
   }
 })();
+
 
 
 
