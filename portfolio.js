@@ -1,19 +1,40 @@
 (function () {
   'use strict';
 
-  var PROXY = 'https://api.allorigins.win/raw?url=';
+  var PROXIES = [
+    'https://api.allorigins.win/raw?url=',
+    'https://corsproxy.io/?'
+  ];
+  var proxyIdx = 0;
   var REFRESH_INTERVAL = 60000;
 
-  // --- Default holdings with logo URLs ---
+  function getProxy() { return PROXIES[proxyIdx % PROXIES.length]; }
+  function rotateProxy() { proxyIdx++; }
+
+  async function fetchViaProxy(yahooUrl) {
+    for (var attempt = 0; attempt < PROXIES.length; attempt++) {
+      try {
+        var url = getProxy() + encodeURIComponent(yahooUrl);
+        var res = await fetch(url);
+        if (!res.ok) throw new Error(res.status);
+        return await res.json();
+      } catch (e) {
+        rotateProxy();
+        if (attempt === PROXIES.length - 1) throw e;
+      }
+    }
+  }
+
+  // --- Default holdings ---
   var DEFAULT_CRYPTO = [
-    { id: 'bitcoin',  name: 'Bitcoin',  ticker: 'BTC', qty: 0, image: 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png' },
-    { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0, image: 'https://assets.coingecko.com/coins/images/279/small/ethereum.png' },
-    { id: 'solana',   name: 'Solana',   ticker: 'SOL', qty: 0, image: 'https://assets.coingecko.com/coins/images/4128/small/solana.png' },
-    { id: 'cardano',  name: 'Cardano',  ticker: 'ADA', qty: 0, image: 'https://assets.coingecko.com/coins/images/975/small/cardano.png' },
-    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0, image: 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png' },
-    { id: 'ondo',     name: 'Ondo',     ticker: 'ONDO', qty: 0, image: 'https://assets.coingecko.com/coins/images/26580/small/ONDO.png' },
-    { id: 'ondo-us-dollar-yield', name: 'Ondo US Dollar Yield', ticker: 'USDY', qty: 0, image: 'https://assets.coingecko.com/coins/images/31695/small/usdy.png' },
-    { id: 'ousg',     name: 'Ondo Short-Term US Gov Bond', ticker: 'OUSG', qty: 0, image: 'https://assets.coingecko.com/coins/images/31694/small/ousg.png' }
+    { id: 'bitcoin',  name: 'Bitcoin',  ticker: 'BTC', qty: 0 },
+    { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0 },
+    { id: 'solana',   name: 'Solana',   ticker: 'SOL', qty: 0 },
+    { id: 'cardano',  name: 'Cardano',  ticker: 'ADA', qty: 0 },
+    { id: 'ripple',   name: 'XRP',      ticker: 'XRP', qty: 0 },
+    { id: 'ondo',     name: 'Ondo',     ticker: 'ONDO', qty: 0 },
+    { id: 'ondo-us-dollar-yield', name: 'Ondo US Dollar Yield', ticker: 'USDY', qty: 0 },
+    { id: 'ousg',     name: 'Ondo Short-Term US Gov Bond', ticker: 'OUSG', qty: 0 }
   ];
 
   var DEFAULT_STOCKS = [
@@ -114,7 +135,9 @@
       'ORCL': 'oracle.com',
       'ADBE': 'adobe.com',
       'CSCO': 'cisco.com',
-      'IBM': 'ibm.com'
+      'IBM': 'ibm.com',
+      'SPY': 'ssga.com',
+      'QQQ': 'invesco.com'
     };
     return domains[symbol.toUpperCase()] || (symbol.toLowerCase() + '.com');
   }
@@ -123,49 +146,52 @@
   async function fetchCryptoPrices() {
     if (cryptoHoldings.length === 0) return;
     var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
+
+    // Fetch prices AND images in one call using /coins/markets
     try {
-      var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids
-        + '&vs_currencies=usd&include_24hr_change=true';
+      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
+        + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
       var res = await fetch(url);
       if (!res.ok) throw new Error(res.status);
       var data = await res.json();
-      for (var id in data) {
-        cryptoPrices[id] = {
-          price: data[id].usd,
-          change: data[id].usd_24h_change
+      for (var i = 0; i < data.length; i++) {
+        var coin = data[i];
+        cryptoPrices[coin.id] = {
+          price: coin.current_price,
+          change: coin.price_change_percentage_24h
         };
+        // Store image URL from API (always up-to-date)
+        if (coin.image) {
+          cryptoImages[coin.id] = coin.image;
+        }
       }
-    } catch (e) { /* silent */ }
+    } catch (e) {
+      // Fallback: try simple price endpoint
+      try {
+        var url2 = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids
+          + '&vs_currencies=usd&include_24hr_change=true';
+        var res2 = await fetch(url2);
+        if (res2.ok) {
+          var data2 = await res2.json();
+          for (var id in data2) {
+            cryptoPrices[id] = {
+              price: data2[id].usd,
+              change: data2[id].usd_24h_change
+            };
+          }
+        }
+      } catch (e2) { /* silent */ }
+    }
 
-    // Fetch images for any coins we don't have images for yet
-    await fetchCryptoImages();
     renderCrypto();
   }
 
-  async function fetchCryptoImages() {
-    var missing = cryptoHoldings.filter(function (h) {
-      return !h.image && !cryptoImages[h.id];
-    });
-    if (missing.length === 0) return;
-
-    var ids = missing.map(function (h) { return h.id; }).join(',');
-    try {
-      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
-        + '&per_page=50&page=1';
-      var res = await fetch(url);
-      if (!res.ok) return;
-      var data = await res.json();
-      for (var i = 0; i < data.length; i++) {
-        cryptoImages[data[i].id] = data[i].image;
-      }
-    } catch (e) { /* silent */ }
-  }
-
   function getCryptoImage(holding) {
-    return holding.image || cryptoImages[holding.id] || '';
+    // Prefer API-fetched image (always current), then saved image on holding
+    return cryptoImages[holding.id] || holding.image || '';
   }
 
-  // --- Fetch stock prices from Yahoo Finance ---
+  // --- Fetch stock prices from Yahoo Finance via proxy ---
   async function fetchStockPrices() {
     var promises = stockHoldings.map(function (h) {
       return fetchOneStock(h.symbol);
@@ -178,10 +204,7 @@
     try {
       var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
         + encodeURIComponent(symbol) + '?range=1d&interval=1d';
-      var url = PROXY + encodeURIComponent(yahooUrl);
-      var res = await fetch(url);
-      if (!res.ok) throw new Error(res.status);
-      var data = await res.json();
+      var data = await fetchViaProxy(yahooUrl);
       var result = data.chart.result[0];
       var meta = result.meta;
       var price = meta.regularMarketPrice;
@@ -191,31 +214,7 @@
     } catch (e) { /* silent */ }
   }
 
-  // --- Build logo HTML ---
-  function cryptoLogoHtml(holding) {
-    var imgUrl = getCryptoImage(holding);
-    if (imgUrl) {
-      return '<div class="asset-logo">'
-        + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.ticker) + '" width="40" height="40" style="border-radius:50%;display:block;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.ticker) + '\'">'
-        + '</div>';
-    }
-    return fallbackLogoHtml(holding.ticker);
-  }
-
-  function stockLogoHtml(holding) {
-    var imgUrl = stockLogoUrl(holding.symbol);
-    return '<div class="asset-logo">'
-      + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(holding.symbol) + '" width="40" height="40" style="border-radius:50%;display:block;object-fit:contain;background:#2a2a2a;" onerror="this.parentNode.outerHTML=\'' + fallbackLogoHtml(holding.symbol) + '\'">'
-      + '</div>';
-  }
-
-  function fallbackLogoHtml(ticker) {
-    return '<div class=\\"asset-logo-gen\\" style=\\"background:' + tickerColor(ticker) + '\\">'
-      + ticker.substring(0, 3)
-      + '</div>';
-  }
-
-  // For inline use (not inside onerror)
+  // --- Helpers ---
   function fallbackLogoDirect(ticker) {
     return '<div class="asset-logo-gen" style="background:' + tickerColor(ticker) + '">'
       + escHtml(ticker.substring(0, 3))
@@ -344,7 +343,9 @@
     fallback.className = 'asset-logo-gen';
     fallback.style.background = tickerColor(ticker);
     fallback.textContent = ticker.substring(0, 3);
-    wrapper.parentNode.replaceChild(fallback, wrapper);
+    if (wrapper.parentNode) {
+      wrapper.parentNode.replaceChild(fallback, wrapper);
+    }
   }
 
   // --- Add / Remove handlers ---
@@ -356,6 +357,10 @@
       cryptoHoldings.splice(idx, 1);
       saveHoldings('mm_crypto', cryptoHoldings);
       renderCrypto();
+    } else if (type === 'ondo') {
+      ondoHoldings.splice(idx, 1);
+      saveHoldings('mm_ondo', ondoHoldings);
+      renderOndo();
     } else {
       stockHoldings.splice(idx, 1);
       saveHoldings('mm_stocks', stockHoldings);
@@ -376,7 +381,10 @@
       }
     });
 
-    form.querySelector('.add-form-submit').addEventListener('click', function () {
+    var submitBtn = form.querySelector('.btn-primary');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', function () {
       var idInput = form.querySelector('[name="coin-id"]');
       var nameInput = form.querySelector('[name="coin-name"]');
       var tickerInput = form.querySelector('[name="coin-ticker"]');
@@ -420,7 +428,10 @@
       }
     });
 
-    form.querySelector('.add-form-submit').addEventListener('click', function () {
+    var submitBtn = form.querySelector('.btn-primary');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', function () {
       var symbolInput = form.querySelector('[name="stock-symbol"]');
       var nameInput = form.querySelector('[name="stock-name"]');
       var qtyInput = form.querySelector('[name="stock-qty"]');
@@ -482,7 +493,6 @@
 
   // Call balanceOf(address) on an ERC-20 contract via eth_call
   async function getTokenBalance(tokenAddress, walletAddr) {
-    // balanceOf(address) selector = 0x70a08231
     var data = '0x70a08231' + walletAddr.slice(2).toLowerCase().padStart(64, '0');
     try {
       var res = await fetch(ETH_RPC, {
@@ -511,7 +521,6 @@
     var whole = rawBalance / divisor;
     var remainder = rawBalance % divisor;
     var remainderStr = remainder.toString().padStart(decimals, '0').slice(0, 6);
-    // Remove trailing zeros
     remainderStr = remainderStr.replace(/0+$/, '');
     if (remainderStr === '') return Number(whole);
     return parseFloat(whole.toString() + '.' + remainderStr);
@@ -554,7 +563,7 @@
     }
 
     renderWalletHoldings();
-    renderOndo(); // Re-render to merge data
+    renderOndo();
   }
 
   function renderWalletHoldings() {
@@ -573,14 +582,10 @@
       var priceInfo = ondoPrices[wb.symbol];
       var valueStr = '\u2014';
 
-      // For tokenized stocks, use underlying stock price
-      if (wb.underlying && priceInfo) {
-        valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
-      } else if (priceInfo) {
+      if (priceInfo) {
         valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
       }
 
-      // Use underlying stock logo if available
       var logoHtml;
       if (wb.underlying) {
         var logoUrl = stockLogoUrl(wb.underlying);
@@ -607,7 +612,6 @@
     }
     holdingsEl.innerHTML = html;
 
-    // Handle broken images
     var imgs = holdingsEl.querySelectorAll('.asset-logo img');
     for (var k = 0; k < imgs.length; k++) {
       imgs[k].addEventListener('error', handleImgError);
@@ -623,7 +627,6 @@
 
     if (!toggleBtn || !panel) return;
 
-    // Load saved wallet
     walletAddress = loadWalletAddress();
     if (walletAddress) {
       walletInput.value = walletAddress;
@@ -683,10 +686,9 @@
   ];
 
   var ondoHoldings = loadHoldings('mm_ondo', DEFAULT_ONDO);
-  var ondoPrices = {};  // symbol -> { price, change }
+  var ondoPrices = {};
 
   async function fetchOndoPrices() {
-    // Ondo tokenized stocks mirror underlying stock prices — fetch via Yahoo Finance
     var promises = ondoHoldings.map(function (h) {
       return fetchOneOndoStock(h);
     });
@@ -698,10 +700,7 @@
     try {
       var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
         + encodeURIComponent(holding.underlying) + '?range=1d&interval=1d';
-      var url = PROXY + encodeURIComponent(yahooUrl);
-      var res = await fetch(url);
-      if (!res.ok) throw new Error(res.status);
-      var data = await res.json();
+      var data = await fetchViaProxy(yahooUrl);
       var result = data.chart.result[0];
       var meta = result.meta;
       var price = meta.regularMarketPrice;
@@ -723,7 +722,6 @@
       var change = p ? fmtChange(p.change) : '\u2014';
       var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
 
-      // Combine manual qty with wallet balance
       var totalQty = h.qty || 0;
       var wb = walletBalances[h.symbol];
       if (wb) totalQty += wb.balance;
@@ -739,7 +737,6 @@
         }
       }
 
-      // Use Ondo branding with underlying stock logo
       var logoUrl = stockLogoUrl(h.underlying);
       var logoHtml = '<div class="asset-logo ondo-asset-logo">'
         + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(h.symbol) + '" width="40" height="40">'
@@ -764,7 +761,6 @@
     }
     list.innerHTML = html;
 
-    // Handle broken images
     var imgs = list.querySelectorAll('.asset-logo img');
     for (var k = 0; k < imgs.length; k++) {
       imgs[k].addEventListener('error', handleImgError);
@@ -788,7 +784,10 @@
       }
     });
 
-    form.querySelector('.add-form-submit').addEventListener('click', function () {
+    var submitBtn = form.querySelector('.btn-primary');
+    if (!submitBtn) return;
+
+    submitBtn.addEventListener('click', function () {
       var symbolInput = form.querySelector('[name="ondo-symbol"]');
       var nameInput = form.querySelector('[name="ondo-name"]');
       var qtyInput = form.querySelector('[name="ondo-qty"]');
@@ -799,7 +798,6 @@
 
       if (!symbol) return;
 
-      // Derive underlying by stripping "ON" suffix
       var underlying = symbol.replace(/ON$/, '');
 
       ondoHoldings.push({
@@ -819,21 +817,6 @@
     });
   }
 
-  // Update handleRemove to support ondo type
-  var _origHandleRemove = handleRemove;
-  handleRemove = function (e) {
-    var btn = e.currentTarget;
-    var type = btn.getAttribute('data-type');
-    var idx = parseInt(btn.getAttribute('data-index'), 10);
-    if (type === 'ondo') {
-      ondoHoldings.splice(idx, 1);
-      saveHoldings('mm_ondo', ondoHoldings);
-      renderOndo();
-    } else {
-      _origHandleRemove.call(this, e);
-    }
-  };
-
   // --- Init ---
   function init() {
     renderCrypto();
@@ -850,7 +833,6 @@
       fetchCryptoPrices();
       fetchStockPrices();
       fetchOndoPrices();
-      // Re-scan wallet if connected
       if (walletAddress) {
         scanWallet(walletAddress);
       }
@@ -863,6 +845,8 @@
     init();
   }
 })();
+
+
 
 
 
