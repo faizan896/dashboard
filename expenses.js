@@ -4,13 +4,13 @@
   var STORAGE_KEY = 'mm_expenses';
 
   var categories = [
-    { key: 'housing',       label: 'Housing',       color: '#8b5cf6' },
-    { key: 'food',          label: 'Food',          color: '#f59e0b' },
-    { key: 'transport',     label: 'Transport',     color: '#3b82f6' },
-    { key: 'utilities',     label: 'Utilities',     color: '#10b981' },
-    { key: 'entertainment', label: 'Entertainment', color: '#ec4899' },
-    { key: 'health',        label: 'Health',        color: '#14b8a6' },
-    { key: 'shopping',      label: 'Shopping',      color: '#f97316' }
+    { key: 'housing',       label: 'Housing',       color: '#9f7aea' },
+    { key: 'food',          label: 'Food',          color: '#f6c857' },
+    { key: 'transport',     label: 'Transport',     color: '#4d8df5' },
+    { key: 'utilities',     label: 'Utilities',     color: '#22d3a7' },
+    { key: 'entertainment', label: 'Entertainment', color: '#f472b6' },
+    { key: 'health',        label: 'Health',        color: '#2dd4bf' },
+    { key: 'shopping',      label: 'Shopping',      color: '#fb923c' }
   ];
 
   function loadExpenses() {
@@ -151,10 +151,10 @@
             var chart = context.chart;
             var ctx2 = chart.ctx;
             var area = chart.chartArea;
-            if (!area) return '#8b5cf6';
+            if (!area) return '#9f7aea';
             var gradient = ctx2.createLinearGradient(0, area.bottom, 0, area.top);
-            gradient.addColorStop(0, '#8b5cf6');
-            gradient.addColorStop(1, '#6366f1');
+            gradient.addColorStop(0, '#9f7aea');
+            gradient.addColorStop(1, '#7c3aed');
             return gradient;
           },
           borderRadius: 8,
@@ -168,7 +168,7 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1a1a25',
+            backgroundColor: '#151a2e',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 13 },
             padding: 12,
@@ -181,13 +181,13 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#5e5e78', font: { size: 12 } }
+            ticks: { color: '#505872', font: { size: 12 } }
           },
           y: {
             grid: { color: 'rgba(255,255,255,0.04)' },
             border: { display: false },
             ticks: {
-              color: '#5e5e78',
+              color: '#505872',
               font: { size: 12 },
               callback: function (value) {
                 return '$' + (value / 1000).toFixed(1) + 'k';
@@ -228,7 +228,7 @@
             data: catTotals,
             backgroundColor: catColors,
             borderWidth: 3,
-            borderColor: '#111119',
+            borderColor: '#0d1120',
             hoverOffset: 8
           }]
         },
@@ -239,7 +239,7 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1a1a25',
+              backgroundColor: '#151a2e',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
@@ -433,6 +433,8 @@
     init();
   }
 })();
+
+
 
 
 
