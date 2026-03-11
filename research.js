@@ -1,29 +1,21 @@
 (function () {
   'use strict';
 
-  var PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
-  ];
-  var proxyIdx = 0;
+  // ── Finnhub API (free, CORS-friendly) ──
+  // Get your free key at https://finnhub.io/register
+  var FINNHUB_KEY = 'd6or3l1r01qmqugc2a80d6or3l1r01qmqugc2a8g';
 
-  function getProxy() { return PROXIES[proxyIdx % PROXIES.length]; }
-  function rotateProxy() { proxyIdx++; }
-
-  async function yahooFetch(url) {
-    for (var attempt = 0; attempt < PROXIES.length; attempt++) {
-      try {
-        var proxyUrl = getProxy() + encodeURIComponent(url);
-        var res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error(res.status);
-        return await res.json();
-      } catch (e) {
-        rotateProxy();
-        if (attempt === PROXIES.length - 1) throw e;
-      }
-    }
+  function finnhubFetch(endpoint) {
+    var url = 'https://finnhub.io/api/v1' + endpoint
+      + (endpoint.indexOf('?') >= 0 ? '&' : '?')
+      + 'token=' + FINNHUB_KEY;
+    return fetch(url).then(function (res) {
+      if (!res.ok) throw new Error('Finnhub ' + res.status);
+      return res.json();
+    });
   }
 
+  // ── Formatters ──
   function fmt(n, decimals) {
     if (n == null || isNaN(n)) return 'N/A';
     decimals = decimals != null ? decimals : 2;
@@ -43,7 +35,7 @@
 
   function fmtPct(n) {
     if (n == null || isNaN(n)) return 'N/A';
-    return (n * 100).toFixed(2) + '%';
+    return Number(n).toFixed(2) + '%';
   }
 
   function fmtDollar(n) {
@@ -51,109 +43,45 @@
     return '$' + fmt(n);
   }
 
-  function raw(obj) {
-    if (!obj) return null;
-    if (obj.raw !== undefined) return obj.raw;
-    if (obj.fmt !== undefined) return obj.fmt;
-    return obj;
+  function val(v) {
+    return (v != null && v !== 0) ? v : null;
   }
 
-  function rawFmt(obj) {
-    if (!obj) return 'N/A';
-    if (obj.fmt) return obj.fmt;
-    if (obj.raw !== undefined) return String(obj.raw);
-    return String(obj);
-  }
-
+  // ── Fetch stock data from Finnhub ──
   async function fetchStockData(ticker) {
     ticker = ticker.toUpperCase().trim();
 
-    // Use Yahoo v8 chart API (still publicly accessible) for price + meta data
-    var chartUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-      + encodeURIComponent(ticker)
-      + '?range=1y&interval=1d&includePrePost=false';
+    // Fetch quote, profile, and basic financials in parallel
+    var results = await Promise.all([
+      finnhubFetch('/quote?symbol=' + encodeURIComponent(ticker)),
+      finnhubFetch('/stock/profile2?symbol=' + encodeURIComponent(ticker)),
+      finnhubFetch('/stock/metric?symbol=' + encodeURIComponent(ticker) + '&metric=all'),
+      finnhubFetch('/stock/recommendation?symbol=' + encodeURIComponent(ticker)),
+      finnhubFetch('/stock/earnings?symbol=' + encodeURIComponent(ticker) + '&limit=4')
+    ]);
 
-    var chartData = await yahooFetch(chartUrl);
-    if (!chartData || !chartData.chart || !chartData.chart.result || !chartData.chart.result[0]) {
+    var quote = results[0];    // { c, d, dp, h, l, o, pc, t }
+    var profile = results[1];  // { name, ticker, logo, industry, ... }
+    var metrics = results[2];  // { metric: { ... }, series: { ... } }
+    var recommendations = results[3]; // [{ buy, hold, sell, strongBuy, strongSell, period }]
+    var earnings = results[4]; // [{ actual, estimate, surprisePercent, period, symbol }]
+
+    // Validate we got real data
+    if (!quote || quote.c === 0 || quote.c == null) {
       throw new Error('No data found for ' + ticker);
     }
 
-    var result = chartData.chart.result[0];
-    var meta = result.meta || {};
-    var closes = (result.indicators && result.indicators.quote && result.indicators.quote[0])
-      ? result.indicators.quote[0].close.filter(function (v) { return v != null; })
-      : [];
-    var volumes = (result.indicators && result.indicators.quote && result.indicators.quote[0])
-      ? result.indicators.quote[0].volume.filter(function (v) { return v != null; })
-      : [];
-    var highs = (result.indicators && result.indicators.quote && result.indicators.quote[0])
-      ? result.indicators.quote[0].high.filter(function (v) { return v != null; })
-      : [];
-    var lows = (result.indicators && result.indicators.quote && result.indicators.quote[0])
-      ? result.indicators.quote[0].low.filter(function (v) { return v != null; })
-      : [];
-
-    var currentPrice = meta.regularMarketPrice;
-    var prevClose = meta.chartPreviousClose || meta.previousClose;
-    var changePct = prevClose ? (currentPrice - prevClose) / prevClose : null;
-
-    var high52 = highs.length ? Math.max.apply(null, highs) : null;
-    var low52 = lows.length ? Math.min.apply(null, lows) : null;
-
-    // Calculate averages
-    var avg50 = null, avg200 = null;
-    if (closes.length >= 50) {
-      var sum50 = 0;
-      for (var i = closes.length - 50; i < closes.length; i++) sum50 += closes[i];
-      avg50 = sum50 / 50;
-    }
-    if (closes.length >= 200) {
-      var sum200 = 0;
-      for (var j = closes.length - 200; j < closes.length; j++) sum200 += closes[j];
-      avg200 = sum200 / 200;
-    }
-
-    var avgVolume = null;
-    if (volumes.length > 0) {
-      var recentVols = volumes.slice(-60);
-      var volSum = 0;
-      for (var k = 0; k < recentVols.length; k++) volSum += recentVols[k];
-      avgVolume = volSum / recentVols.length;
-    }
-
-    var lastVolume = volumes.length > 0 ? volumes[volumes.length - 1] : null;
-
-    // Build a normalized structure compatible with renderResults
     return {
-      _source: 'chart',
-      price: {
-        shortName: { raw: meta.shortName || meta.symbol || ticker },
-        longName: { raw: meta.longName || '' },
-        regularMarketPrice: { raw: currentPrice },
-        regularMarketPreviousClose: { raw: prevClose },
-        regularMarketChangePercent: { raw: changePct },
-        regularMarketOpen: { raw: meta.regularMarketOpen || null },
-        regularMarketDayHigh: { raw: meta.regularMarketDayHigh || null },
-        regularMarketDayLow: { raw: meta.regularMarketDayLow || null },
-        regularMarketVolume: { raw: lastVolume },
-        averageDailyVolume3Month: { raw: avgVolume },
-        marketCap: { raw: null }
-      },
-      summaryDetail: {
-        fiftyTwoWeekHigh: { raw: high52 },
-        fiftyTwoWeekLow: { raw: low52 },
-        fiftyDayAverage: { raw: avg50 },
-        twoHundredDayAverage: { raw: avg200 }
-      },
-      defaultKeyStatistics: {},
-      financialData: {},
-      assetProfile: {},
-      earnings: {},
-      earningsHistory: {},
-      calendarEvents: {}
+      ticker: ticker,
+      quote: quote,
+      profile: profile || {},
+      metric: (metrics && metrics.metric) ? metrics.metric : {},
+      recommendations: recommendations || [],
+      earnings: earnings || []
     };
   }
 
+  // ── Build HTML section ──
   function buildSection(title, rows) {
     var html = '<div class="research-section glass-card">';
     html += '<h3 class="research-section-title">' + title + '</h3>';
@@ -170,19 +98,14 @@
     return html;
   }
 
-  function renderResults(ticker, d) {
-    var price = d.price || {};
-    var summary = d.summaryDetail || {};
-    var keyStats = d.defaultKeyStatistics || {};
-    var fin = d.financialData || {};
-    var profile = d.assetProfile || {};
-    var earnings = d.earnings || {};
-    var earningsHist = d.earningsHistory || {};
-    var calendar = d.calendarEvents || {};
+  // ── Render results ──
+  function renderResults(d) {
+    var q = d.quote;
+    var p = d.profile;
+    var m = d.metric;
+    var ticker = d.ticker;
 
-    var mktPrice = raw(price.regularMarketPrice);
-    var prevClose = raw(price.regularMarketPreviousClose);
-    var changePct = raw(price.regularMarketChangePercent);
+    var changePct = q.dp; // percent change
     var isUp = changePct != null && changePct >= 0;
 
     var html = '';
@@ -191,151 +114,147 @@
     html += '<div class="research-header glass-card">';
     html += '<div class="research-header-left">';
     html += '<h2 class="research-ticker">' + ticker + '</h2>';
-    html += '<span class="research-name">' + (raw(price.shortName) || raw(price.longName) || ticker) + '</span>';
-    if (profile.sector) {
-      html += '<span class="research-sector">' + profile.sector + (profile.industry ? ' &bull; ' + profile.industry : '') + '</span>';
+    html += '<span class="research-name">' + (p.name || ticker) + '</span>';
+    if (p.finnhubIndustry) {
+      html += '<span class="research-sector">' + p.finnhubIndustry + '</span>';
     }
     html += '</div>';
     html += '<div class="research-header-right">';
-    html += '<span class="research-price">' + fmtDollar(mktPrice) + '</span>';
+    if (p.logo) {
+      html += '<img src="' + p.logo + '" alt="" style="width:40px;height:40px;border-radius:8px;margin-bottom:6px;">';
+    }
+    html += '<span class="research-price">' + fmtDollar(q.c) + '</span>';
     html += '<span class="research-change ' + (isUp ? 'positive' : 'negative') + '">'
-      + (isUp ? '+' : '') + (changePct != null ? (changePct * 100).toFixed(2) : '--') + '%</span>';
+      + (isUp ? '+' : '') + (changePct != null ? changePct.toFixed(2) : '--') + '%</span>';
     html += '</div>';
     html += '</div>';
 
     // Market Overview
     html += buildSection('Market Overview', [
-      { label: 'Market Cap', value: fmtBig(raw(price.marketCap)) },
-      { label: 'Enterprise Value', value: fmtBig(raw(keyStats.enterpriseValue)) },
-      { label: 'Share Price', value: fmtDollar(mktPrice) },
-      { label: 'Previous Close', value: fmtDollar(prevClose) },
-      { label: 'Open', value: fmtDollar(raw(price.regularMarketOpen)) },
-      { label: 'Day High', value: fmtDollar(raw(price.regularMarketDayHigh)) },
-      { label: 'Day Low', value: fmtDollar(raw(price.regularMarketDayLow)) },
-      { label: 'Volume', value: raw(price.regularMarketVolume) != null ? fmt(raw(price.regularMarketVolume), 0) : 'N/A' },
-      { label: 'Avg Volume', value: raw(price.averageDailyVolume3Month) != null ? fmt(raw(price.averageDailyVolume3Month), 0) : 'N/A' },
-      { label: '52W High', value: fmtDollar(raw(summary.fiftyTwoWeekHigh)) },
-      { label: '52W Low', value: fmtDollar(raw(summary.fiftyTwoWeekLow)) },
-      { label: '50 Day Avg', value: fmtDollar(raw(summary.fiftyDayAverage)) },
-      { label: '200 Day Avg', value: fmtDollar(raw(summary.twoHundredDayAverage)) },
+      { label: 'Market Cap', value: fmtBig(val(p.marketCapitalization) ? p.marketCapitalization * 1e6 : null) },
+      { label: 'Share Price', value: fmtDollar(q.c) },
+      { label: 'Previous Close', value: fmtDollar(q.pc) },
+      { label: 'Open', value: fmtDollar(q.o) },
+      { label: 'Day High', value: fmtDollar(q.h) },
+      { label: 'Day Low', value: fmtDollar(q.l) },
+      { label: 'Change', value: q.d != null ? (q.d >= 0 ? '+' : '') + fmtDollar(q.d) : 'N/A', color: q.d >= 0 ? 'green' : 'red' },
+      { label: '52W High', value: fmtDollar(val(m['52WeekHigh'])) },
+      { label: '52W Low', value: fmtDollar(val(m['52WeekLow'])) },
+      { label: '52W High Date', value: m['52WeekHighDate'] || 'N/A' },
+      { label: '52W Low Date', value: m['52WeekLowDate'] || 'N/A' },
+      { label: '10D Avg Volume', value: val(m['10DayAverageTradingVolume']) ? fmt(m['10DayAverageTradingVolume'] * 1e6, 0) : 'N/A' },
+      { label: '3M Avg Volume', value: val(m['3MonthAverageTradingVolume']) ? fmt(m['3MonthAverageTradingVolume'] * 1e6, 0) : 'N/A' },
     ]);
 
     // Valuation
     html += buildSection('Valuation', [
-      { label: 'Trailing P/E', value: rawFmt(summary.trailingPE) },
-      { label: 'Forward P/E', value: rawFmt(summary.forwardPE) },
-      { label: 'PEG Ratio', value: rawFmt(keyStats.pegRatio) },
-      { label: 'Price/Sales (TTM)', value: rawFmt(keyStats.priceToSalesTrailing12Months) },
-      { label: 'Price/Book', value: rawFmt(keyStats.priceToBook) },
-      { label: 'EV/Revenue', value: rawFmt(keyStats.enterpriseToRevenue) },
-      { label: 'EV/EBITDA', value: rawFmt(keyStats.enterpriseToEbitda) },
+      { label: 'P/E (TTM)', value: val(m.peTTM) ? fmt(m.peTTM) : 'N/A' },
+      { label: 'P/E (Annual)', value: val(m.peAnnual) ? fmt(m.peAnnual) : 'N/A' },
+      { label: 'P/B (Quarterly)', value: val(m.pbQuarterly) ? fmt(m.pbQuarterly) : 'N/A' },
+      { label: 'P/B (Annual)', value: val(m.pbAnnual) ? fmt(m.pbAnnual) : 'N/A' },
+      { label: 'P/S (TTM)', value: val(m.psTTM) ? fmt(m.psTTM) : 'N/A' },
+      { label: 'P/S (Annual)', value: val(m.psAnnual) ? fmt(m.psAnnual) : 'N/A' },
+      { label: 'EV/EBITDA (Annual)', value: val(m['ev/ebitdaAnnual']) ? fmt(m['ev/ebitdaAnnual']) : 'N/A' },
+      { label: 'P/FCF (TTM)', value: val(m.pfcfTTM) ? fmt(m.pfcfTTM) : 'N/A' },
     ]);
 
     // Financial Health
     html += buildSection('Financial Health', [
-      { label: 'Total Revenue', value: fmtBig(raw(fin.totalRevenue)) },
-      { label: 'Revenue Per Share', value: fmtDollar(raw(fin.revenuePerShare)) },
-      { label: 'Gross Profit', value: fmtBig(raw(fin.grossProfits)) },
-      { label: 'EBITDA', value: fmtBig(raw(fin.ebitda)) },
-      { label: 'Net Income to Common', value: fmtBig(raw(keyStats.netIncomeToCommon)) },
-      { label: 'Total Cash', value: fmtBig(raw(fin.totalCash)) },
-      { label: 'Cash Per Share', value: fmtDollar(raw(fin.totalCashPerShare)) },
-      { label: 'Total Debt', value: fmtBig(raw(fin.totalDebt)) },
-      { label: 'Debt/Equity', value: rawFmt(fin.debtToEquity) },
-      { label: 'Current Ratio', value: rawFmt(fin.currentRatio) },
-      { label: 'Quick Ratio', value: rawFmt(fin.quickRatio) },
+      { label: 'Revenue/Share (TTM)', value: val(m.revenuePerShareTTM) ? fmtDollar(m.revenuePerShareTTM) : 'N/A' },
+      { label: 'Revenue/Share (Annual)', value: val(m.revenuePerShareAnnual) ? fmtDollar(m.revenuePerShareAnnual) : 'N/A' },
+      { label: 'Net Income/Share', value: val(m.netIncomePerShareTTM) ? fmtDollar(m.netIncomePerShareTTM) : 'N/A' },
+      { label: 'Cash/Share (Quarterly)', value: val(m.cashPerSharePerShareQuarterly) ? fmtDollar(m.cashPerSharePerShareQuarterly) : 'N/A' },
+      { label: 'Current Ratio (Quarterly)', value: val(m.currentRatioQuarterly) ? fmt(m.currentRatioQuarterly) : 'N/A' },
+      { label: 'Debt/Equity (Quarterly)', value: val(m.totalDebt_totalEquityQuarterly) ? fmt(m.totalDebt_totalEquityQuarterly) : 'N/A' },
+      { label: 'LT Debt/Equity (Quarterly)', value: val(m.longTermDebt_equityQuarterly) ? fmt(m.longTermDebt_equityQuarterly) : 'N/A' },
+      { label: 'Book Value/Share (Quarterly)', value: val(m.bookValuePerShareQuarterly) ? fmtDollar(m.bookValuePerShareQuarterly) : 'N/A' },
+      { label: 'Tangible Book Value/Share', value: val(m.tangibleBookValuePerShareQuarterly) ? fmtDollar(m.tangibleBookValuePerShareQuarterly) : 'N/A' },
     ]);
 
     // Profitability & Growth
     html += buildSection('Profitability & Growth', [
-      { label: 'Profit Margin', value: fmtPct(raw(fin.profitMargins)) },
-      { label: 'Operating Margin', value: fmtPct(raw(fin.operatingMargins)) },
-      { label: 'Gross Margin', value: fmtPct(raw(fin.grossMargins)) },
-      { label: 'EBITDA Margin', value: fmtPct(raw(fin.ebitdaMargins)) },
-      { label: 'Return on Assets', value: fmtPct(raw(fin.returnOnAssets)) },
-      { label: 'Return on Equity', value: fmtPct(raw(fin.returnOnEquity)) },
-      { label: 'Revenue Growth (YoY)', value: fmtPct(raw(fin.revenueGrowth)) },
-      { label: 'Earnings Growth', value: fmtPct(raw(fin.earningsGrowth)) },
+      { label: 'Gross Margin (TTM)', value: fmtPct(val(m.grossMarginTTM)) },
+      { label: 'Gross Margin (5Y)', value: fmtPct(val(m.grossMargin5Y)) },
+      { label: 'Operating Margin (TTM)', value: fmtPct(val(m.operatingMarginTTM)) },
+      { label: 'Operating Margin (5Y)', value: fmtPct(val(m.operatingMargin5Y)) },
+      { label: 'Net Profit Margin (TTM)', value: fmtPct(val(m.netProfitMarginTTM)) },
+      { label: 'Net Profit Margin (5Y)', value: fmtPct(val(m.netProfitMargin5Y)) },
+      { label: 'ROA (TTM)', value: fmtPct(val(m.roaTTM)) },
+      { label: 'ROE (TTM)', value: fmtPct(val(m.roeTTM)) },
+      { label: 'ROI (TTM)', value: fmtPct(val(m.roiTTM)) },
+      { label: 'Revenue Growth (3Y)', value: fmtPct(val(m.revenueGrowth3Y)) },
+      { label: 'Revenue Growth (5Y)', value: fmtPct(val(m.revenueGrowth5Y)) },
+      { label: 'EPS Growth (TTM)', value: fmtPct(val(m.epsGrowthTTMYoy)) },
+      { label: 'EPS Growth (3Y)', value: fmtPct(val(m.epsGrowth3Y)) },
+      { label: 'EPS Growth (5Y)', value: fmtPct(val(m.epsGrowth5Y)) },
     ]);
 
-    // EPS & Earnings
+    // EPS
     html += buildSection('Earnings Per Share', [
-      { label: 'Trailing EPS', value: rawFmt(keyStats.trailingEps) },
-      { label: 'Forward EPS', value: rawFmt(keyStats.forwardEps) },
-      { label: 'Book Value', value: fmtDollar(raw(keyStats.bookValue)) },
+      { label: 'EPS (TTM)', value: val(m.epsTTM) ? fmtDollar(m.epsTTM) : 'N/A' },
+      { label: 'EPS (Annual)', value: val(m.epsAnnual) ? fmtDollar(m.epsAnnual) : 'N/A' },
+      { label: 'Book Value/Share', value: val(m.bookValuePerShareQuarterly) ? fmtDollar(m.bookValuePerShareQuarterly) : 'N/A' },
     ]);
 
     // Quarterly Earnings History
-    if (earningsHist.history && earningsHist.history.length > 0) {
+    if (d.earnings && d.earnings.length > 0) {
       var qRows = [];
-      for (var i = 0; i < earningsHist.history.length; i++) {
-        var q = earningsHist.history[i];
-        var qPeriod = rawFmt(q.quarter) || ('Q' + (i + 1));
-        var period = q.period || '';
-        var epsActual = rawFmt(q.epsActual);
-        var epsEst = rawFmt(q.epsEstimate);
-        var surprise = rawFmt(q.surprisePercent);
-        var surpVal = raw(q.surprisePercent);
+      for (var i = 0; i < d.earnings.length; i++) {
+        var e = d.earnings[i];
+        var actual = e.actual != null ? e.actual.toFixed(2) : 'N/A';
+        var estimate = e.estimate != null ? e.estimate.toFixed(2) : 'N/A';
+        var surprise = e.surprisePercent != null ? e.surprisePercent.toFixed(2) : null;
         qRows.push({
-          label: period + ' (EPS Actual / Est)',
-          value: epsActual + ' / ' + epsEst + '  (' + (surpVal != null && surpVal >= 0 ? '+' : '') + surprise + ' surprise)',
-          color: surpVal != null ? (surpVal >= 0 ? 'green' : 'red') : null
+          label: (e.period || 'Q' + (i + 1)) + ' (Actual / Est)',
+          value: '$' + actual + ' / $' + estimate + (surprise != null ? '  (' + (e.surprisePercent >= 0 ? '+' : '') + surprise + '% surprise)' : ''),
+          color: surprise != null ? (e.surprisePercent >= 0 ? 'green' : 'red') : null
         });
       }
       html += buildSection('Quarterly Earnings History', qRows);
     }
 
-    // Dividends & Yield
+    // Dividends
     html += buildSection('Dividends & Yield', [
-      { label: 'Dividend Rate', value: rawFmt(summary.dividendRate) },
-      { label: 'Dividend Yield', value: raw(summary.dividendYield) != null ? fmtPct(raw(summary.dividendYield)) : 'N/A' },
-      { label: 'Ex-Dividend Date', value: rawFmt(summary.exDividendDate) },
-      { label: 'Payout Ratio', value: raw(summary.payoutRatio) != null ? fmtPct(raw(summary.payoutRatio)) : 'N/A' },
-      { label: '5Y Avg Dividend Yield', value: rawFmt(summary.fiveYearAvgDividendYield) },
+      { label: 'Dividend Yield (Indicated)', value: fmtPct(val(m.dividendYieldIndicatedAnnual)) },
+      { label: 'Dividends/Share', value: val(m.dividendsPerShareTTM) ? fmtDollar(m.dividendsPerShareTTM) : 'N/A' },
+      { label: 'Dividend Growth (5Y)', value: fmtPct(val(m.dividendGrowthRate5Y)) },
+      { label: 'Payout Ratio', value: fmtPct(val(m.payoutRatioTTM)) },
+      { label: 'Dividend Yield (5Y)', value: fmtPct(val(m['currentDividendYieldTTM'])) },
     ]);
 
-    // Shares & Short Interest
-    html += buildSection('Shares & Short Interest', [
-      { label: 'Shares Outstanding', value: raw(keyStats.sharesOutstanding) != null ? fmt(raw(keyStats.sharesOutstanding), 0) : 'N/A' },
-      { label: 'Float', value: raw(keyStats.floatShares) != null ? fmt(raw(keyStats.floatShares), 0) : 'N/A' },
-      { label: 'Short Ratio', value: rawFmt(keyStats.shortRatio) },
-      { label: 'Short % of Float', value: raw(keyStats.shortPercentOfFloat) != null ? fmtPct(raw(keyStats.shortPercentOfFloat)) : 'N/A' },
-      { label: '% Held by Insiders', value: raw(keyStats.heldPercentInsiders) != null ? fmtPct(raw(keyStats.heldPercentInsiders)) : 'N/A' },
-      { label: '% Held by Institutions', value: raw(keyStats.heldPercentInstitutions) != null ? fmtPct(raw(keyStats.heldPercentInstitutions)) : 'N/A' },
-      { label: 'Beta', value: rawFmt(keyStats.beta) },
+    // Shares & Beta
+    html += buildSection('Shares & Beta', [
+      { label: 'Shares Outstanding', value: val(p.shareOutstanding) ? fmt(p.shareOutstanding * 1e6, 0) : 'N/A' },
+      { label: 'Beta', value: val(m.beta) ? fmt(m.beta) : 'N/A' },
     ]);
 
-    // Target & Analyst
-    html += buildSection('Analyst Targets', [
-      { label: 'Target Mean Price', value: fmtDollar(raw(fin.targetMeanPrice)) },
-      { label: 'Target High', value: fmtDollar(raw(fin.targetHighPrice)) },
-      { label: 'Target Low', value: fmtDollar(raw(fin.targetLowPrice)) },
-      { label: 'Target Median', value: fmtDollar(raw(fin.targetMedianPrice)) },
-      { label: 'Recommendation', value: (fin.recommendationKey || 'N/A').toUpperCase() },
-      { label: 'Number of Analysts', value: raw(fin.numberOfAnalystOpinions) != null ? String(raw(fin.numberOfAnalystOpinions)) : 'N/A' },
-    ]);
+    // Analyst Recommendations
+    if (d.recommendations && d.recommendations.length > 0) {
+      var rec = d.recommendations[0]; // most recent
+      html += buildSection('Analyst Recommendations (' + rec.period + ')', [
+        { label: 'Strong Buy', value: String(rec.strongBuy || 0), color: 'green' },
+        { label: 'Buy', value: String(rec.buy || 0), color: 'green' },
+        { label: 'Hold', value: String(rec.hold || 0) },
+        { label: 'Sell', value: String(rec.sell || 0), color: 'red' },
+        { label: 'Strong Sell', value: String(rec.strongSell || 0), color: 'red' },
+      ]);
+    }
 
     // Company Info
-    if (profile.longBusinessSummary || profile.fullTimeEmployees) {
+    if (p.name) {
       var infoRows = [];
-      if (profile.fullTimeEmployees) infoRows.push({ label: 'Employees', value: fmt(profile.fullTimeEmployees, 0) });
-      if (profile.country) infoRows.push({ label: 'Country', value: profile.country });
-      if (profile.city) infoRows.push({ label: 'HQ', value: profile.city + (profile.state ? ', ' + profile.state : '') });
-      if (profile.website) infoRows.push({ label: 'Website', value: '<a href="' + profile.website + '" target="_blank" style="color:var(--accent)">' + profile.website + '</a>' });
-      html += buildSection('Company Info', infoRows);
-
-      if (profile.longBusinessSummary) {
-        html += '<div class="research-section glass-card">';
-        html += '<h3 class="research-section-title">About</h3>';
-        html += '<p class="research-about">' + profile.longBusinessSummary + '</p>';
-        html += '</div>';
-      }
+      if (p.exchange) infoRows.push({ label: 'Exchange', value: p.exchange });
+      if (p.country) infoRows.push({ label: 'Country', value: p.country });
+      if (p.ipo) infoRows.push({ label: 'IPO Date', value: p.ipo });
+      if (p.weburl) infoRows.push({ label: 'Website', value: '<a href="' + p.weburl + '" target="_blank" style="color:var(--accent)">' + p.weburl + '</a>' });
+      if (p.phone) infoRows.push({ label: 'Phone', value: p.phone });
+      if (infoRows.length > 0) html += buildSection('Company Info', infoRows);
     }
 
     return html;
   }
 
-  // --- Init ---
+  // ── Init ──
   var searchInput = document.getElementById('research-search-input');
   var searchBtn = document.getElementById('research-search-btn');
   var resultsContainer = document.getElementById('research-results');
@@ -354,7 +273,7 @@
 
     try {
       var data = await fetchStockData(ticker);
-      resultsContainer.innerHTML = renderResults(ticker.toUpperCase(), data);
+      resultsContainer.innerHTML = renderResults(data);
     } catch (e) {
       errorEl.textContent = 'Could not fetch data for "' + ticker.toUpperCase() + '". Check the ticker and try again.';
       errorEl.style.display = 'block';
@@ -368,6 +287,8 @@
     if (e.key === 'Enter') doSearch();
   });
 })();
+
+
 
 
 
