@@ -3,439 +3,423 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GALLOP — Portfolio Dashboard</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2322d3a7'/%3E%3Cstop offset='100%25' stop-color='%234d8df5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='%23080b16'/%3E%3Cpath d='M8 22l4-6 4 3 4-8 4 5' stroke='url(%23g)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='24' cy='16' r='2' fill='%2322d3a7'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="styles.css">
+  <title>GALLOP — Financial Dashboard</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231c191d'/%3E%3Cpolyline points='22 12 18 12 15 21 9 3 6 12 2 12' stroke='%23E8DFC4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'] },
+          colors: {
+            charcoal: { 900: '#1c191d', 800: '#221f23', 700: '#2A2529', 600: '#332f33', 500: '#3b363b', 400: '#443f44', 300: '#4d474d' },
+            ivory: { 100: '#F3F0E7', 200: '#E8DFC4', 300: '#D4C9A8' },
+            gray: { muted: '#C5C0B5', dim: '#7A756D', darker: '#5E5952' },
+            status: { green: '#8FB87A', red: '#C46B6B', blue: '#7A8FA6', purple: '#9A85A6', gold: '#C9B57A' }
+          },
+          backgroundImage: { 'accent-gradient': 'linear-gradient(135deg, #E8DFC4, #F3EDD6)' },
+          boxShadow: { 'glass': '0 4px 30px rgba(0,0,0,0.1)', 'glow': '0 0 20px rgba(232,223,196,0.15)' }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div class="layout">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <svg class="brand-logo" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="logo-grad" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#22d3a7"/>
-              <stop offset="100%" stop-color="#4d8df5"/>
-            </linearGradient>
-            <linearGradient id="logo-bg" x1="0" y1="0" x2="36" y2="36" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stop-color="#111628"/>
-              <stop offset="100%" stop-color="#0d1120"/>
-            </linearGradient>
-          </defs>
-          <rect width="36" height="36" rx="10" fill="url(#logo-bg)" stroke="url(#logo-grad)" stroke-width="1.5" stroke-opacity="0.3"/>
-          <path d="M8 24l5-7 4 3.5 5-10 5 6" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-          <circle cx="27" cy="16.5" r="2.5" fill="#22d3a7" opacity="0.9"/>
-          <circle cx="27" cy="16.5" r="5" fill="#22d3a7" opacity="0.1"/>
-        </svg>
-        <span class="brand-name">GALLOP</span>
+<body class="bg-charcoal-800 text-ivory-100 font-sans text-[13px] tracking-wide w-full h-screen overflow-hidden flex antialiased selection:bg-ivory-200 selection:text-charcoal-900">
+
+  <!-- Sidebar -->
+  <aside class="w-[240px] bg-charcoal-900/95 backdrop-blur-xl border-r border-ivory-100/5 flex flex-col flex-shrink-0 z-20">
+    <div class="h-20 flex items-center px-8 border-b border-ivory-100/5">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-lg bg-charcoal-700 border border-ivory-100/10 flex items-center justify-center relative overflow-hidden group">
+          <div class="absolute inset-0 bg-accent-gradient opacity-10 group-hover:opacity-20 transition-opacity"></div>
+          <svg class="w-4 h-4 text-ivory-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <span class="font-bold text-[13px] tracking-widest uppercase text-gradient">GALLOP</span>
       </div>
+    </div>
 
-      <nav class="sidebar-nav">
-        <ul>
-          <li>
-            <a href="#" class="nav-link active" data-page="overview">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7" rx="1"/>
-                <rect x="14" y="3" width="7" height="7" rx="1"/>
-                <rect x="3" y="14" width="7" height="7" rx="1"/>
-                <rect x="14" y="14" width="7" height="7" rx="1"/>
-              </svg>
-              <span>Overview</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="nav-link" data-page="portfolio">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 20V10"/>
-                <path d="M12 20V4"/>
-                <path d="M6 20v-6"/>
-              </svg>
-              <span>Portfolio</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="nav-link" data-page="expenses">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="1" y="4" width="22" height="16" rx="2"/>
-                <path d="M1 10h22"/>
-              </svg>
-              <span>Expenses</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="nav-link" data-page="markets">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-                <polyline points="16 7 22 7 22 13"/>
-              </svg>
-              <span>Markets</span>
-            </a>
-          </li>
-          <li>
-            <a href="#" class="nav-link" data-page="research">
-              <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                <line x1="11" y1="8" x2="11" y2="14"/>
-                <line x1="8" y1="11" x2="14" y2="11"/>
-              </svg>
-              <span>Research</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
+    <nav class="flex-1 py-8 px-4 flex flex-col gap-1 overflow-y-auto">
+      <button data-target="overview" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] uppercase tracking-wider font-medium relative group bg-ivory-200/5 text-ivory-200 transition-colors">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent-gradient rounded-r-full active-indicator opacity-100"></div>
+        <svg class="w-4 h-4 opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        Overview
+      </button>
+      <button data-target="portfolio" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] uppercase tracking-wider font-medium text-gray-dim hover:bg-ivory-100/5 hover:text-gray-muted transition-colors relative group">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent-gradient rounded-r-full opacity-0 active-indicator"></div>
+        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
+        Portfolio
+      </button>
+      <button data-target="expenses" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] uppercase tracking-wider font-medium text-gray-dim hover:bg-ivory-100/5 hover:text-gray-muted transition-colors relative group">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent-gradient rounded-r-full opacity-0 active-indicator"></div>
+        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+        Expenses
+      </button>
+      <button data-target="markets" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] uppercase tracking-wider font-medium text-gray-dim hover:bg-ivory-100/5 hover:text-gray-muted transition-colors relative group">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent-gradient rounded-r-full opacity-0 active-indicator"></div>
+        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
+        Markets
+      </button>
+      <button data-target="research" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[11px] uppercase tracking-wider font-medium text-gray-dim hover:bg-ivory-100/5 hover:text-gray-muted transition-colors relative group">
+        <div class="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-4 bg-accent-gradient rounded-r-full opacity-0 active-indicator"></div>
+        <svg class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        Research
+      </button>
+    </nav>
 
-      <div class="sidebar-footer">
-        <div class="market-status" id="market-status">
-          <span class="market-dot"></span>
-          <span class="market-label">Market Closed</span>
-        </div>
+    <div class="p-6 border-t border-ivory-100/5">
+      <div class="flex items-center gap-2">
+        <div id="market-status-dot" class="w-2 h-2 rounded-full bg-status-red"></div>
+        <span id="market-status-text" class="text-[10px] uppercase tracking-widest text-gray-muted">Markets Closed</span>
       </div>
-    </aside>
+      <p class="text-[10px] text-gray-dim mt-2 tracking-wide">Last sync: <span id="last-sync-text">--:--</span></p>
+    </div>
+  </aside>
 
-    <!-- Main Content -->
-    <div class="main">
-      <!-- Top Header -->
-      <header class="topbar">
-        <div class="topbar-left">
-          <h1 class="page-title" id="greeting">Good evening</h1>
-          <span class="page-subtitle" id="page-date"></span>
-        </div>
-        <div class="topbar-right">
-          <div class="search-box">
-            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <input type="text" placeholder="Search assets...">
+  <!-- Main -->
+  <main class="flex-1 flex flex-col min-w-0 relative">
+    <header class="glass-header h-20 px-8 flex justify-between items-center border-b border-ivory-100/5 z-10 sticky top-0 w-full">
+      <div class="flex flex-col">
+        <h1 id="greeting-text" class="text-[14px] font-medium text-ivory-100 tracking-wide">Good evening</h1>
+        <p id="current-date" class="text-[11px] text-gray-muted mt-0.5 tracking-wider uppercase"></p>
+      </div>
+      <div class="flex items-center gap-6">
+        <div class="relative w-64">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="w-3.5 h-3.5 text-gray-dim" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
           </div>
-          <div class="last-updated" id="last-updated">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span id="last-updated-time">--:--</span>
-          </div>
+          <input type="text" placeholder="Search assets..." class="w-full bg-ivory-100/5 border border-transparent focus:border-ivory-200/50 focus:bg-charcoal-700/50 rounded-md py-1.5 pl-9 pr-3 text-[12px] text-ivory-100 placeholder-gray-dim outline-none transition-all shadow-inner">
         </div>
-      </header>
+        <div class="w-8 h-8 rounded-full bg-charcoal-600 flex items-center justify-center border border-ivory-100/10 text-xs font-semibold text-ivory-200">IN</div>
+      </div>
+    </header>
 
-      <!-- Dashboard Content -->
-      <div class="content">
+    <div class="flex-1 overflow-y-auto p-8 relative">
 
-        <!-- ==================== OVERVIEW PAGE ==================== -->
-        <section class="page-section active" data-section="overview">
+      <!-- ==================== OVERVIEW ==================== -->
+      <div id="page-overview" class="page-section space-y-8 fade-in">
 
-          <!-- Finance Stats -->
-          <div class="stats-row anim-stagger">
-            <div class="stat-card glow-card">
-              <div class="stat-icon stat-icon-networth">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-              </div>
-              <div class="stat-body">
-                <div class="stat-label">Net Worth</div>
-                <div class="stat-value" id="stat-networth">$0</div>
-                <div class="stat-change" id="stat-networth-sub">Cash + Investments</div>
-              </div>
+        <div class="grid grid-cols-4 gap-6">
+          <!-- Net Worth -->
+          <div class="glass-panel rounded-xl p-5 hover:-translate-y-1 transition-transform duration-300 hover:shadow-glow group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-status-green/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="w-8 h-8 rounded-lg bg-status-green/10 text-status-green flex items-center justify-center mb-4 border border-status-green/20">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
             </div>
-            <div class="stat-card glow-card clickable" id="cash-card">
-              <div class="stat-icon stat-icon-cash">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-1">Net Worth</h3>
+            <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="nw-display">$0</div>
+            <p class="text-[11px] text-gray-dim mt-2">Cash + Investments</p>
+          </div>
+
+          <!-- Cash on Hand -->
+          <div class="glass-panel rounded-xl p-5 hover:-translate-y-1 transition-transform duration-300 group relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-status-blue/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div>
+              <div class="w-8 h-8 rounded-lg bg-status-blue/10 text-status-blue flex items-center justify-center mb-4 border border-status-blue/20">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
               </div>
-              <div class="stat-body">
-                <div class="stat-label">Cash on Hand</div>
-                <div class="stat-value" id="stat-cash">$0</div>
-                <div class="stat-change" id="stat-cash-sub">
-                  <button class="edit-btn" id="edit-cash-btn">Edit</button>
+              <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-1">Cash on Hand</h3>
+              <div id="coh-display-container">
+                <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="coh-display">$0</div>
+                <div class="mt-2 flex items-center justify-between">
+                  <span class="text-[11px] text-gray-dim">Liquid assets</span>
+                  <button id="coh-edit-btn" class="text-[10px] px-2 py-0.5 rounded bg-charcoal-700 border border-ivory-100/10 text-gray-muted hover:text-ivory-200 hover:border-ivory-200/30 transition-colors">Edit</button>
                 </div>
               </div>
-            </div>
-            <div class="stat-card glow-card">
-              <div class="stat-icon stat-icon-invested">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
-              </div>
-              <div class="stat-body">
-                <div class="stat-label">Total Invested</div>
-                <div class="stat-value" id="stat-invested">$0</div>
-                <div class="stat-change" id="stat-invested-sub">Crypto + Stocks + Ondo GM</div>
-              </div>
-            </div>
-            <div class="stat-card glow-card clickable" id="budget-card">
-              <div class="stat-icon stat-icon-budget">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
-              </div>
-              <div class="stat-body">
-                <div class="stat-label">Monthly Budget</div>
-                <div class="stat-value" id="stat-budget">$0</div>
-                <div class="stat-change" id="stat-budget-sub">
-                  <button class="edit-btn" id="edit-budget-btn">Edit</button>
+              <div id="coh-edit-container" class="hidden mt-1">
+                <div class="relative flex items-center mb-2">
+                  <span class="absolute left-2 text-gray-dim text-sm">$</span>
+                  <input type="number" id="coh-input" class="w-full bg-charcoal-800 border border-ivory-200/50 focus:border-ivory-200 rounded px-2 py-1 pl-6 text-sm text-ivory-100 outline-none">
+                </div>
+                <div class="flex gap-2">
+                  <button id="coh-save" class="flex-1 text-[10px] bg-accent-gradient text-charcoal-900 font-medium py-1 rounded">Save</button>
+                  <button id="coh-cancel" class="flex-1 text-[10px] bg-charcoal-700 border border-ivory-100/10 text-ivory-100 py-1 rounded hover:bg-charcoal-600">Cancel</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Cash Edit Modal -->
-          <div class="inline-edit-form" id="cash-edit-form">
-            <label>Cash on Hand ($)</label>
-            <input type="number" id="cash-input" min="0" step="any" placeholder="e.g. 5000">
-            <div class="inline-edit-actions">
-              <button class="btn-primary" id="cash-save">Save</button>
-              <button class="btn-ghost" id="cash-cancel">Cancel</button>
+          <!-- Total Invested -->
+          <div class="glass-panel rounded-xl p-5 hover:-translate-y-1 transition-transform duration-300 group relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-status-purple/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div class="w-8 h-8 rounded-lg bg-status-purple/10 text-status-purple flex items-center justify-center mb-4 border border-status-purple/20">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>
             </div>
+            <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-1">Total Invested</h3>
+            <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="ti-display">$0</div>
+            <p class="text-[11px] text-gray-dim mt-2" id="ti-sub">Stocks · Crypto · RWA</p>
           </div>
 
-          <!-- Budget Edit Modal -->
-          <div class="inline-edit-form" id="budget-edit-form">
-            <label>Monthly Budget ($)</label>
-            <input type="number" id="budget-input" min="0" step="any" placeholder="e.g. 4000">
-            <div class="inline-edit-actions">
-              <button class="btn-primary" id="budget-save">Save</button>
-              <button class="btn-ghost" id="budget-cancel">Cancel</button>
+          <!-- Monthly Budget -->
+          <div class="glass-panel rounded-xl p-5 hover:-translate-y-1 transition-transform duration-300 group relative overflow-hidden flex flex-col justify-between">
+            <div class="absolute top-0 right-0 w-24 h-24 bg-status-gold/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+            <div>
+              <div class="w-8 h-8 rounded-lg bg-status-gold/10 text-status-gold flex items-center justify-center mb-4 border border-status-gold/20">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
+              </div>
+              <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-1">Monthly Budget</h3>
+              <div id="mb-display-container">
+                <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="mb-display">$0</div>
+                <div class="mt-2 flex items-center justify-between">
+                  <span class="text-[11px] text-gray-dim">Target limit</span>
+                  <button id="mb-edit-btn" class="text-[10px] px-2 py-0.5 rounded bg-charcoal-700 border border-ivory-100/10 text-gray-muted hover:text-ivory-200 hover:border-ivory-200/30 transition-colors">Edit</button>
+                </div>
+              </div>
+              <div id="mb-edit-container" class="hidden mt-1">
+                <div class="relative flex items-center mb-2">
+                  <span class="absolute left-2 text-gray-dim text-sm">$</span>
+                  <input type="number" id="mb-input" class="w-full bg-charcoal-800 border border-ivory-200/50 focus:border-ivory-200 rounded px-2 py-1 pl-6 text-sm text-ivory-100 outline-none">
+                </div>
+                <div class="flex gap-2">
+                  <button id="mb-save" class="flex-1 text-[10px] bg-accent-gradient text-charcoal-900 font-medium py-1 rounded">Save</button>
+                  <button id="mb-cancel" class="flex-1 text-[10px] bg-charcoal-700 border border-ivory-100/10 text-ivory-100 py-1 rounded hover:bg-charcoal-600">Cancel</button>
+                </div>
+              </div>
             </div>
           </div>
+        </div>
 
-          <!-- Portfolio Overview Chart -->
-          <div class="card glass-card chart-hero anim-slide">
-            <div class="card-header">
-              <div class="card-title-group">
-                <h2>Portfolio Overview</h2>
-                <span class="chart-hero-value" id="chart-hero-value">$0</span>
-              </div>
-              <div class="card-actions">
-                <button class="tab-btn active" data-overview="networth">Net Worth</button>
-                <button class="tab-btn" data-overview="returns">Returns</button>
-              </div>
+        <!-- Portfolio Overview Chart -->
+        <div class="glass-panel rounded-xl p-6">
+          <div class="flex justify-between items-start mb-6">
+            <div>
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted mb-2">Portfolio Overview</h2>
+              <div class="text-3xl font-medium text-ivory-100 tracking-tight" id="chart-total-display">$0</div>
             </div>
-            <div class="chart-hero-wrap">
-              <canvas id="overview-chart"></canvas>
+            <div class="flex bg-charcoal-700/50 p-1 rounded-lg border border-ivory-100/5">
+              <button class="px-4 py-1.5 text-[11px] rounded-md bg-ivory-200/10 text-ivory-200 font-medium transition-colors" data-overview="networth">Net Worth</button>
+              <button class="px-4 py-1.5 text-[11px] rounded-md text-gray-muted hover:text-ivory-100 transition-colors" data-overview="returns">Returns</button>
             </div>
           </div>
+          <div class="h-[280px] w-full relative">
+            <canvas id="overview-chart"></canvas>
+          </div>
+        </div>
 
-          <!-- Quick Glance: Allocation -->
-          <div class="duo-row anim-stagger">
-            <div class="card glass-card">
-              <div class="card-header">
-                <h2>Allocation</h2>
-              </div>
-              <div class="allocation-chart-wrap">
+        <!-- Allocation + Monthly Expenses -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="glass-panel rounded-xl p-6 flex flex-col">
+            <h2 class="text-[11px] uppercase tracking-widest text-gray-muted mb-6">Allocation</h2>
+            <div class="flex-1 flex items-center justify-center relative">
+              <div class="h-[180px] w-[180px]">
                 <canvas id="allocation-chart"></canvas>
               </div>
-              <div class="allocation-legend" id="allocation-legend"></div>
+              <div class="absolute inset-0 flex items-center justify-center flex-col pointer-events-none">
+                <span class="text-[10px] text-gray-dim uppercase tracking-wider">Total</span>
+                <span class="text-[16px] text-ivory-100 font-medium mt-1">100%</span>
+              </div>
             </div>
+            <div class="mt-6 grid grid-cols-2 gap-y-3 gap-x-4" id="allocation-legend"></div>
+          </div>
 
-            <div class="card glass-card">
-              <div class="card-header">
-                <h2>Monthly Expenses</h2>
-                <div class="card-actions">
-                  <button class="tab-btn active" data-exp-range="3">3M</button>
-                  <button class="tab-btn" data-exp-range="6">6M</button>
-                  <button class="tab-btn" data-exp-range="12">1Y</button>
-                </div>
+          <div class="glass-panel rounded-xl p-6 flex flex-col">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted">Monthly Expenses</h2>
+              <div class="flex gap-2">
+                <button class="text-[10px] text-ivory-200 border-b border-ivory-200 font-medium" data-exp-range="3">3M</button>
+                <button class="text-[10px] text-gray-muted hover:text-ivory-100 transition-colors" data-exp-range="6">6M</button>
+                <button class="text-[10px] text-gray-muted hover:text-ivory-100 transition-colors" data-exp-range="12">1Y</button>
               </div>
-              <div class="expenses-chart-wrap">
-                <canvas id="expenses-bar-chart"></canvas>
+            </div>
+            <div class="flex-1 w-full relative min-h-[200px]">
+              <canvas id="expenses-bar-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== PORTFOLIO ==================== -->
+      <div id="page-portfolio" class="page-section hidden space-y-8 fade-in">
+
+        <!-- Price Widgets -->
+        <div class="grid grid-cols-4 gap-4">
+          <div class="glass-panel rounded-xl p-4 flex flex-col justify-between group hover:border-ivory-100/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-[#F7931A] text-white flex items-center justify-center text-[10px] font-bold">B</div>
+              <div>
+                <div class="text-[12px] text-ivory-100 font-medium leading-none">Bitcoin</div>
+                <div class="text-[10px] text-gray-dim uppercase tracking-wider mt-1">BTC/USD</div>
               </div>
+            </div>
+            <div class="flex justify-between items-end mt-2">
+              <div class="text-[18px] text-ivory-100 font-medium tracking-tight" id="widget-price-btc">--</div>
+              <div class="px-1.5 py-0.5 rounded text-[10px] font-medium" id="widget-change-btc">--</div>
+            </div>
+            <div class="h-[30px] w-full mt-3 opacity-70 group-hover:opacity-100 transition-opacity"><canvas id="sparkline-btc"></canvas></div>
+          </div>
+
+          <div class="glass-panel rounded-xl p-4 flex flex-col justify-between group hover:border-ivory-100/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-[#76B900] text-charcoal-900 flex items-center justify-center text-[10px] font-bold">N</div>
+              <div>
+                <div class="text-[12px] text-ivory-100 font-medium leading-none">NVIDIA</div>
+                <div class="text-[10px] text-gray-dim uppercase tracking-wider mt-1">NVDA</div>
+              </div>
+            </div>
+            <div class="flex justify-between items-end mt-2">
+              <div class="text-[18px] text-ivory-100 font-medium tracking-tight" id="widget-price-nvda">--</div>
+              <div class="px-1.5 py-0.5 rounded text-[10px] font-medium" id="widget-change-nvda">--</div>
+            </div>
+            <div class="h-[30px] w-full mt-3 opacity-70 group-hover:opacity-100 transition-opacity"><canvas id="sparkline-nvda"></canvas></div>
+          </div>
+
+          <div class="glass-panel rounded-xl p-4 flex flex-col justify-between group hover:border-ivory-100/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-status-blue text-white flex items-center justify-center text-[10px] font-bold">S</div>
+              <div>
+                <div class="text-[12px] text-ivory-100 font-medium leading-none">S&amp;P 500</div>
+                <div class="text-[10px] text-gray-dim uppercase tracking-wider mt-1">SPX</div>
+              </div>
+            </div>
+            <div class="flex justify-between items-end mt-2">
+              <div class="text-[18px] text-ivory-100 font-medium tracking-tight" id="widget-price-spx">--</div>
+              <div class="px-1.5 py-0.5 rounded text-[10px] font-medium" id="widget-change-spx">--</div>
+            </div>
+            <div class="h-[30px] w-full mt-3 opacity-70 group-hover:opacity-100 transition-opacity"><canvas id="sparkline-spx"></canvas></div>
+          </div>
+
+          <div class="glass-panel rounded-xl p-4 flex flex-col justify-between group hover:border-ivory-100/20 transition-colors">
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-6 h-6 rounded-full bg-[#D4AF37] text-charcoal-900 flex items-center justify-center text-[10px] font-bold">G</div>
+              <div>
+                <div class="text-[12px] text-ivory-100 font-medium leading-none">Gold</div>
+                <div class="text-[10px] text-gray-dim uppercase tracking-wider mt-1">XAU/USD</div>
+              </div>
+            </div>
+            <div class="flex justify-between items-end mt-2">
+              <div class="text-[18px] text-ivory-100 font-medium tracking-tight" id="widget-price-gold">--</div>
+              <div class="px-1.5 py-0.5 rounded text-[10px] font-medium" id="widget-change-gold">--</div>
+            </div>
+            <div class="h-[30px] w-full mt-3 opacity-70 group-hover:opacity-100 transition-opacity"><canvas id="sparkline-gold"></canvas></div>
+          </div>
+        </div>
+
+        <!-- Crypto + Stock Holdings -->
+        <div class="grid grid-cols-2 gap-6">
+          <div class="glass-panel rounded-xl p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted">Crypto Holdings</h2>
+              <button id="add-crypto-btn" class="text-[10px] border border-ivory-200/50 text-ivory-200 hover:bg-ivory-200/10 px-2.5 py-1 rounded transition-colors">+ Add</button>
+            </div>
+            <div id="add-crypto-form" class="hidden mb-6 bg-charcoal-700/30 p-4 rounded-lg border border-ivory-100/5">
+              <div class="grid grid-cols-2 gap-3 mb-3">
+                <input type="text" name="coin-id" placeholder="CoinGecko ID (e.g. bitcoin)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+                <input type="text" name="coin-ticker" placeholder="Ticker (e.g. BTC)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none uppercase text-ivory-100">
+                <input type="text" name="coin-name" placeholder="Name (optional)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+                <input type="number" name="coin-qty" placeholder="Qty held (optional)" min="0" step="any" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+              </div>
+              <div class="flex justify-end gap-2">
+                <button class="cancel-btn text-[10px] text-gray-dim hover:text-ivory-100 px-3 py-1">Cancel</button>
+                <button class="btn-primary text-[10px] bg-accent-gradient text-charcoal-900 font-medium px-4 py-1 rounded">Save Entry</button>
+              </div>
+            </div>
+            <div class="space-y-1" id="crypto-list"></div>
+          </div>
+
+          <div class="glass-panel rounded-xl p-6">
+            <div class="flex justify-between items-center mb-6">
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted">Stock Holdings</h2>
+              <button id="add-stock-btn" class="text-[10px] border border-ivory-200/50 text-ivory-200 hover:bg-ivory-200/10 px-2.5 py-1 rounded transition-colors">+ Add</button>
+            </div>
+            <div id="add-stock-form" class="hidden mb-6 bg-charcoal-700/30 p-4 rounded-lg border border-ivory-100/5">
+              <div class="grid grid-cols-3 gap-3 mb-3">
+                <input type="text" name="stock-symbol" placeholder="Ticker (e.g. AAPL)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none uppercase text-ivory-100">
+                <input type="text" name="stock-name" placeholder="Name (optional)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+                <input type="number" name="stock-qty" placeholder="Shares (optional)" min="0" step="any" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+              </div>
+              <div class="flex justify-end gap-2">
+                <button class="cancel-btn text-[10px] text-gray-dim hover:text-ivory-100 px-3 py-1">Cancel</button>
+                <button class="btn-primary text-[10px] bg-accent-gradient text-charcoal-900 font-medium px-4 py-1 rounded">Save Entry</button>
+              </div>
+            </div>
+            <div class="space-y-1" id="stock-list"></div>
+          </div>
+        </div>
+
+        <!-- Ondo Global Markets -->
+        <div class="glass-panel rounded-xl border-l-2 border-l-status-blue p-6 relative overflow-hidden">
+          <div class="absolute right-0 top-0 w-64 h-full bg-gradient-to-l from-status-blue/5 to-transparent pointer-events-none"></div>
+          <div class="flex justify-between items-center mb-6 relative z-10">
+            <div class="flex items-center gap-3">
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted">Ondo Global Markets</h2>
+              <span class="px-1.5 py-0.5 rounded bg-status-blue/10 text-status-blue border border-status-blue/20 text-[9px] uppercase tracking-wider font-semibold">RWA</span>
+            </div>
+            <div class="flex gap-2">
+              <button id="ondo-wallet-toggle-btn" class="text-[11px] flex items-center gap-2 bg-charcoal-700 hover:bg-charcoal-600 border border-status-blue/30 text-ivory-100 px-3 py-1.5 rounded-md transition-colors">
+                <svg class="w-3.5 h-3.5 text-status-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path></svg>
+                Wallet
+              </button>
+              <button id="add-ondo-btn" class="text-[10px] border border-ivory-200/50 text-ivory-200 hover:bg-ivory-200/10 px-2.5 py-1 rounded transition-colors">+ Add</button>
             </div>
           </div>
 
-        </section>
-
-        <!-- ==================== PORTFOLIO PAGE ==================== -->
-        <section class="page-section" data-section="portfolio">
-
-          <!-- Price Widgets (compact) -->
-          <div class="price-widgets anim-stagger">
-            <div class="price-widget glass-card" id="widget-btc">
-              <div class="widget-left">
-                <div class="widget-logo logo-btc">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#F7931A"/>
-                    <path d="M21.2 13.8c.3-2-1.2-3.1-3.3-3.8l.7-2.7-1.6-.4-.7 2.7c-.4-.1-.8-.2-1.3-.3l.7-2.7-1.6-.4-.7 2.7c-.3-.1-.7-.2-1-.3l-2.3-.6-.4 1.7s1.2.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 0 .1 0 .2.1h-.2l-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 1.9 2.1.5c.4.1.8.2 1.2.3l-.7 2.8 1.6.4.7-2.7c.4.1.9.2 1.3.3l-.7 2.7 1.6.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1 0-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.4zm-3.8 5.3c-.5 2.1-4 1-5.1.7l.9-3.7c1.1.3 4.7.8 4.2 3zm.5-5.4c-.5 1.9-3.4.9-4.3.7l.8-3.3c1 .2 4 .7 3.5 2.6z" fill="white"/>
-                  </svg>
-                </div>
-                <div class="widget-info">
-                  <span class="widget-name">Bitcoin</span>
-                  <span class="widget-ticker">BTC/USD</span>
-                </div>
-              </div>
-              <div class="widget-right">
-                <span class="widget-price" id="price-btc">--</span>
-                <span class="widget-change" id="change-btc">&mdash;</span>
-              </div>
-              <div class="widget-sparkline" id="spark-btc"></div>
+          <!-- Wallet Panel -->
+          <div id="ondo-wallet-panel" class="hidden mb-6 bg-charcoal-800/80 border border-status-blue/20 rounded-lg p-4 relative z-10">
+            <label class="block text-[10px] text-gray-dim uppercase tracking-wider mb-2">Ethereum Address</label>
+            <div class="flex gap-3">
+              <input type="text" id="ondo-wallet-input" placeholder="0x..." class="flex-1 bg-charcoal-900 border border-ivory-100/10 focus:border-status-blue rounded px-3 py-2 text-xs outline-none text-ivory-100 font-mono" spellcheck="false" autocomplete="off">
+              <button id="ondo-wallet-scan-btn" class="bg-status-blue/10 hover:bg-status-blue/20 text-status-blue border border-status-blue/30 px-4 py-2 rounded text-xs font-medium transition-colors">Scan</button>
+              <button id="ondo-wallet-clear-btn" class="bg-charcoal-700 hover:bg-charcoal-600 border border-ivory-100/10 text-ivory-100 px-4 py-2 rounded text-xs transition-colors" style="display:none;">Clear</button>
             </div>
+            <div id="ondo-wallet-status" class="text-[11px] mt-2"></div>
+            <div id="ondo-wallet-holdings" class="mt-3 space-y-1"></div>
+          </div>
 
-            <div class="price-widget glass-card" id="widget-nvda">
-              <div class="widget-left">
-                <div class="widget-logo logo-nvda">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#76B900"/>
-                    <path d="M13 12.5v7.5s-1.5-.3-2.5-1.5c-1.2-1.5-1-3.8.3-5.1.6-.5 1.4-.8 2.2-.9zm1.5-.5v9c2.5-.2 4.5-1.8 5.3-3.5.9-2 .5-4.2-1-5.5-1.1-.9-2.6-1.2-4.3-1v1zm-5.5 2c-1.5 2.2-1.2 5.2.7 7 1.5 1.4 3.5 2 5.3 2 3 0 5.5-1.8 6.8-4.3 1-2 .8-4.5-.5-6.3-1.5-2-4-3.2-6.8-3.2-.5 0-1 0-1.5.1v-1.5l1.5-.1c3.5 0 6.5 1.6 8.2 4 1.5 2.2 1.8 5 .5 7.5-1.5 3-4.8 5.2-8.7 5.2-2.5 0-4.8-.8-6.5-2.5-2-2-2.8-5.2-1.5-7.8h2.5z" fill="white"/>
-                  </svg>
-                </div>
-                <div class="widget-info">
-                  <span class="widget-name">NVIDIA</span>
-                  <span class="widget-ticker">NVDA</span>
-                </div>
-              </div>
-              <div class="widget-right">
-                <span class="widget-price" id="price-nvda">--</span>
-                <span class="widget-change" id="change-nvda">&mdash;</span>
-              </div>
-              <div class="widget-sparkline" id="spark-nvda"></div>
+          <!-- Add Ondo Form -->
+          <div id="add-ondo-form" class="hidden mb-6 bg-charcoal-700/30 p-4 rounded-lg border border-ivory-100/5 relative z-10">
+            <div class="grid grid-cols-3 gap-3 mb-3">
+              <input type="text" name="ondo-symbol" placeholder="Symbol (e.g. AAPLON)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+              <input type="text" name="ondo-name" placeholder="Name (optional)" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
+              <input type="number" name="ondo-qty" placeholder="Tokens (optional)" min="0" step="any" class="bg-charcoal-800 border border-ivory-100/10 focus:border-ivory-200 rounded px-2 py-1 text-xs outline-none text-ivory-100">
             </div>
-
-            <div class="price-widget glass-card" id="widget-spx">
-              <div class="widget-left">
-                <div class="widget-logo logo-spx">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#1c3d6e"/>
-                    <path d="M8 22l4-5 3 3 4-7 5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                  </svg>
-                </div>
-                <div class="widget-info">
-                  <span class="widget-name">S&amp;P 500</span>
-                  <span class="widget-ticker">SPX</span>
-                </div>
-              </div>
-              <div class="widget-right">
-                <span class="widget-price" id="price-spx">--</span>
-                <span class="widget-change" id="change-spx">&mdash;</span>
-              </div>
-              <div class="widget-sparkline" id="spark-spx"></div>
-            </div>
-
-            <div class="price-widget glass-card" id="widget-gold">
-              <div class="widget-left">
-                <div class="widget-logo logo-gold">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#D4A017"/>
-                    <path d="M11 21h10l2-5h-3l-1-3h-2l-1-3h-1l-1 3h-2l-1 3H8l3 5z" fill="white" opacity="0.9"/>
-                    <path d="M13 21v2h6v-2" stroke="white" stroke-width="1" fill="none"/>
-                  </svg>
-                </div>
-                <div class="widget-info">
-                  <span class="widget-name">Gold</span>
-                  <span class="widget-ticker">XAU/USD</span>
-                </div>
-              </div>
-              <div class="widget-right">
-                <span class="widget-price" id="price-gold">--</span>
-                <span class="widget-change" id="change-gold">&mdash;</span>
-              </div>
-              <div class="widget-sparkline" id="spark-gold"></div>
+            <div class="flex justify-end gap-2">
+              <button class="cancel-btn text-[10px] text-gray-dim hover:text-ivory-100 px-3 py-1">Cancel</button>
+              <button class="btn-primary text-[10px] bg-accent-gradient text-charcoal-900 font-medium px-4 py-1 rounded">Save Entry</button>
             </div>
           </div>
 
-          <!-- Portfolio Holdings -->
-          <div class="portfolio-row anim-stagger">
-            <div class="card glass-card portfolio-card">
-              <div class="card-header">
-                <h2>Crypto Holdings</h2>
-                <button class="btn-accent" id="add-crypto-btn">+ Add</button>
-              </div>
-              <div class="add-holding-form" id="add-crypto-form">
-                <input type="text" name="coin-id" placeholder="CoinGecko ID (e.g. bitcoin)">
-                <input type="text" name="coin-ticker" placeholder="Ticker (e.g. BTC)">
-                <input type="text" name="coin-name" placeholder="Name (optional)">
-                <input type="number" name="coin-qty" placeholder="Qty held (optional)" min="0" step="any">
-                <button class="btn-primary">Add Coin</button>
-              </div>
-              <div class="holdings-list" id="crypto-holdings-list"></div>
-            </div>
+          <div class="space-y-1 relative z-10" id="ondo-list"></div>
+        </div>
+      </div>
 
-            <div class="card glass-card portfolio-card">
-              <div class="card-header">
-                <h2>Stock Holdings</h2>
-                <button class="btn-accent" id="add-stock-btn">+ Add</button>
-              </div>
-              <div class="add-holding-form" id="add-stock-form">
-                <input type="text" name="stock-symbol" placeholder="Ticker (e.g. AAPL)">
-                <input type="text" name="stock-name" placeholder="Name (optional)">
-                <input type="number" name="stock-qty" placeholder="Shares held (optional)" min="0" step="any">
-                <button class="btn-primary">Add Stock</button>
-              </div>
-              <div class="holdings-list" id="stock-holdings-list"></div>
-            </div>
+      <!-- ==================== EXPENSES ==================== -->
+      <div id="page-expenses" class="page-section hidden space-y-8 fade-in">
+
+        <div class="grid grid-cols-3 gap-6">
+          <div class="glass-panel rounded-xl p-5">
+            <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-2">Total Expenses</h3>
+            <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="exp-total">$0</div>
+            <p class="text-[11px] text-gray-dim mt-2" id="exp-total-change"></p>
           </div>
-
-          <!-- Ondo Global Markets -->
-          <div class="ondo-gm-section">
-            <div class="card glass-card portfolio-card ondo-card">
-              <div class="card-header">
-                <div class="ondo-header-left">
-                  <svg class="ondo-logo" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#0052FF"/>
-                    <circle cx="16" cy="16" r="8" stroke="white" stroke-width="2.5" fill="none"/>
-                    <circle cx="16" cy="16" r="3" fill="white"/>
-                  </svg>
-                  <h2>Ondo Global Markets</h2>
-                  <span class="ondo-badge">RWA</span>
-                </div>
-                <div class="ondo-header-actions">
-                  <button class="ondo-wallet-toggle" id="ondo-wallet-toggle-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-                      <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-                      <path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>
-                    </svg>
-                    Wallet
-                  </button>
-                  <button class="btn-accent" id="add-ondo-btn">+ Add</button>
-                </div>
-              </div>
-              <div class="ondo-wallet-panel" id="ondo-wallet-panel">
-                <div class="wallet-input-row">
-                  <input type="text" id="ondo-wallet-input" placeholder="Enter Ethereum wallet address (0x...)" spellcheck="false" autocomplete="off">
-                  <button class="btn-primary" id="ondo-wallet-scan-btn">Scan</button>
-                  <button class="btn-ghost" id="ondo-wallet-clear-btn" style="display:none;">Clear</button>
-                </div>
-                <div class="wallet-status" id="ondo-wallet-status"></div>
-                <div class="wallet-holdings-list" id="ondo-wallet-holdings"></div>
-              </div>
-              <div class="add-holding-form" id="add-ondo-form">
-                <input type="text" name="ondo-symbol" placeholder="Symbol (e.g. AAPLON, NVDAON)">
-                <input type="text" name="ondo-name" placeholder="Name (optional)">
-                <input type="number" name="ondo-qty" placeholder="Tokens held (optional)" min="0" step="any">
-                <button class="btn-primary">Add Tokenized Stock</button>
-              </div>
-              <div class="holdings-list" id="ondo-holdings-list"></div>
-            </div>
+          <div class="glass-panel rounded-xl p-5">
+            <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-2">Monthly Average</h3>
+            <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="exp-avg">$0</div>
+            <p class="text-[11px] text-gray-dim mt-2" id="exp-avg-sub"></p>
           </div>
-
-        </section>
-
-        <!-- ==================== EXPENSES PAGE ==================== -->
-        <section class="page-section" data-section="expenses">
-
-          <div class="expenses-summary anim-stagger">
-            <div class="expense-stat glass-card">
-              <div class="expense-stat-label">Total Expenses</div>
-              <div class="expense-stat-value" id="exp-total">$0</div>
-              <div class="expense-stat-sub" id="exp-total-change"></div>
-            </div>
-            <div class="expense-stat glass-card">
-              <div class="expense-stat-label">Monthly Average</div>
-              <div class="expense-stat-value" id="exp-avg">$0</div>
-              <div class="expense-stat-sub" id="exp-avg-sub"></div>
-            </div>
-            <div class="expense-stat glass-card">
-              <div class="expense-stat-label">Highest Month</div>
-              <div class="expense-stat-value" id="exp-high">$0</div>
-              <div class="expense-stat-sub" id="exp-high-month"></div>
-            </div>
+          <div class="glass-panel rounded-xl p-5">
+            <h3 class="text-[10px] uppercase tracking-widest text-gray-muted mb-2">Highest Month</h3>
+            <div class="text-[28px] font-medium text-ivory-100 tracking-tight" id="exp-high">$0</div>
+            <p class="text-[11px] text-status-gold mt-2" id="exp-high-month">--</p>
           </div>
+        </div>
 
-          <div class="card glass-card" style="margin-bottom:24px;">
-            <div class="card-header">
-              <h2>Add Expense</h2>
+        <!-- Add Expense -->
+        <div class="glass-panel rounded-xl p-6">
+          <h2 class="text-[11px] uppercase tracking-widest text-gray-muted mb-4">Add New Expense</h2>
+          <div class="grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end">
+            <div>
+              <label class="block text-[10px] text-gray-dim uppercase tracking-wider mb-1.5">Month</label>
+              <input type="month" id="exp-input-month" class="w-full bg-charcoal-700/50 border border-ivory-100/10 focus:border-ivory-200 rounded p-2 text-xs outline-none text-ivory-100">
             </div>
-            <div class="expense-add-row" id="expense-add-row">
-              <input type="month" id="exp-input-month" class="form-field">
-              <select id="exp-input-category" class="form-field">
+            <div>
+              <label class="block text-[10px] text-gray-dim uppercase tracking-wider mb-1.5">Category</label>
+              <select id="exp-input-category" class="w-full bg-charcoal-700/50 border border-ivory-100/10 focus:border-ivory-200 rounded p-2 text-xs outline-none text-ivory-100 appearance-none">
                 <option value="">Category</option>
                 <option value="housing">Housing</option>
                 <option value="food">Food</option>
@@ -445,149 +429,91 @@
                 <option value="health">Health</option>
                 <option value="shopping">Shopping</option>
               </select>
-              <input type="number" id="exp-input-amount" class="form-field" placeholder="Amount ($)" min="0" step="any">
-              <button class="btn-primary" id="exp-add-btn">Add</button>
+            </div>
+            <div>
+              <label class="block text-[10px] text-gray-dim uppercase tracking-wider mb-1.5">Amount</label>
+              <input type="number" id="exp-input-amount" placeholder="$0.00" min="0" step="any" class="w-full bg-charcoal-700/50 border border-ivory-100/10 focus:border-ivory-200 rounded p-2 text-xs outline-none text-ivory-100">
+            </div>
+            <button id="exp-add-btn" class="bg-accent-gradient text-charcoal-900 font-medium px-6 py-2 rounded text-xs h-[34px] hover:shadow-glow transition-shadow">Add</button>
+          </div>
+        </div>
+
+        <!-- Entries + Donut -->
+        <div class="grid grid-cols-[2fr_1fr] gap-6">
+          <div class="glass-panel rounded-xl p-6 flex flex-col h-[400px]">
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-[11px] uppercase tracking-widest text-gray-muted">Expense Entries</h2>
+              <button id="exp-clear-all-btn" class="text-[10px] text-gray-dim hover:text-status-red transition-colors">Clear All</button>
+            </div>
+            <div class="flex-1 overflow-y-auto pr-2" id="expense-entries-list">
+              <p class="text-[11px] text-gray-dim">No expenses yet. Add one above.</p>
             </div>
           </div>
-
-          <div class="duo-row">
-            <div class="card glass-card">
-              <div class="card-header">
-                <h2>Expense Entries</h2>
-                <button class="btn-ghost" id="exp-clear-all-btn">Clear All</button>
-              </div>
-              <div id="expense-entries-list" class="expense-entries-list">
-                <p class="text-muted" style="font-size:13px;">No expenses yet. Add one above.</p>
-              </div>
+          <div class="glass-panel rounded-xl p-6 flex flex-col h-[400px]">
+            <h2 class="text-[11px] uppercase tracking-widest text-gray-muted mb-4">By Category</h2>
+            <div class="flex-1 relative flex items-center justify-center">
+              <canvas id="expenses-donut-chart"></canvas>
             </div>
-
-            <div class="card glass-card">
-              <div class="card-header">
-                <h2>By Category</h2>
-              </div>
-              <div class="expenses-donut-wrap">
-                <canvas id="expenses-donut-chart"></canvas>
-              </div>
-              <div class="expenses-legend" id="expenses-legend"></div>
-            </div>
+            <div class="mt-4 space-y-2" id="expenses-legend"></div>
           </div>
-
-        </section>
-
-        <!-- ==================== MARKETS PAGE ==================== -->
-        <section class="page-section" data-section="markets">
-
-          <div class="section-intro">
-            <h2 class="section-heading">Live Markets</h2>
-            <p class="section-desc">Real-time prices updated every 60 seconds</p>
-          </div>
-
-          <div class="markets-grid anim-stagger">
-            <div class="market-card glass-card">
-              <div class="market-card-top">
-                <div class="widget-logo logo-btc">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#F7931A"/>
-                    <path d="M21.2 13.8c.3-2-1.2-3.1-3.3-3.8l.7-2.7-1.6-.4-.7 2.7c-.4-.1-.8-.2-1.3-.3l.7-2.7-1.6-.4-.7 2.7c-.3-.1-.7-.2-1-.3l-2.3-.6-.4 1.7s1.2.3 1.2.3c.7.2.8.6.8 1l-.8 3.2c0 0 .1 0 .2.1h-.2l-1.1 4.5c-.1.2-.3.5-.7.4 0 0-1.2-.3-1.2-.3l-.8 1.9 2.1.5c.4.1.8.2 1.2.3l-.7 2.8 1.6.4.7-2.7c.4.1.9.2 1.3.3l-.7 2.7 1.6.4.7-2.8c2.9.5 5.1.3 6-2.3.7-2.1 0-3.3-1.5-4.1 1.1-.3 1.9-1 2.1-2.4zm-3.8 5.3c-.5 2.1-4 1-5.1.7l.9-3.7c1.1.3 4.7.8 4.2 3zm.5-5.4c-.5 1.9-3.4.9-4.3.7l.8-3.3c1 .2 4 .7 3.5 2.6z" fill="white"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="market-card-name">Bitcoin</div>
-                  <div class="market-card-ticker">BTC/USD</div>
-                </div>
-              </div>
-              <div class="market-card-price" id="market-price-btc">--</div>
-              <div class="market-card-change" id="market-change-btc">&mdash;</div>
-            </div>
-
-            <div class="market-card glass-card">
-              <div class="market-card-top">
-                <div class="widget-logo logo-nvda">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#76B900"/>
-                    <path d="M13 12.5v7.5s-1.5-.3-2.5-1.5c-1.2-1.5-1-3.8.3-5.1.6-.5 1.4-.8 2.2-.9zm1.5-.5v9c2.5-.2 4.5-1.8 5.3-3.5.9-2 .5-4.2-1-5.5-1.1-.9-2.6-1.2-4.3-1v1zm-5.5 2c-1.5 2.2-1.2 5.2.7 7 1.5 1.4 3.5 2 5.3 2 3 0 5.5-1.8 6.8-4.3 1-2 .8-4.5-.5-6.3-1.5-2-4-3.2-6.8-3.2-.5 0-1 0-1.5.1v-1.5l1.5-.1c3.5 0 6.5 1.6 8.2 4 1.5 2.2 1.8 5 .5 7.5-1.5 3-4.8 5.2-8.7 5.2-2.5 0-4.8-.8-6.5-2.5-2-2-2.8-5.2-1.5-7.8h2.5z" fill="white"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="market-card-name">NVIDIA</div>
-                  <div class="market-card-ticker">NVDA</div>
-                </div>
-              </div>
-              <div class="market-card-price" id="market-price-nvda">--</div>
-              <div class="market-card-change" id="market-change-nvda">&mdash;</div>
-            </div>
-
-            <div class="market-card glass-card">
-              <div class="market-card-top">
-                <div class="widget-logo logo-spx">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#1c3d6e"/>
-                    <path d="M8 22l4-5 3 3 4-7 5 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="market-card-name">S&amp;P 500</div>
-                  <div class="market-card-ticker">SPX</div>
-                </div>
-              </div>
-              <div class="market-card-price" id="market-price-spx">--</div>
-              <div class="market-card-change" id="market-change-spx">&mdash;</div>
-            </div>
-
-            <div class="market-card glass-card">
-              <div class="market-card-top">
-                <div class="widget-logo logo-gold">
-                  <svg viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="16" fill="#D4A017"/>
-                    <path d="M11 21h10l2-5h-3l-1-3h-2l-1-3h-1l-1 3h-2l-1 3H8l3 5z" fill="white" opacity="0.9"/>
-                    <path d="M13 21v2h6v-2" stroke="white" stroke-width="1" fill="none"/>
-                  </svg>
-                </div>
-                <div>
-                  <div class="market-card-name">Gold</div>
-                  <div class="market-card-ticker">XAU/USD</div>
-                </div>
-              </div>
-              <div class="market-card-price" id="market-price-gold">--</div>
-              <div class="market-card-change" id="market-change-gold">&mdash;</div>
-            </div>
-          </div>
-
-        </section>
-
-        <!-- ==================== RESEARCH PAGE ==================== -->
-        <section class="page-section" data-section="research">
-
-          <div class="card glass-card" style="margin-bottom:24px;">
-            <div class="card-header">
-              <h2>Stock Research</h2>
-            </div>
-            <div class="research-search-row">
-              <input type="text" id="research-search-input" class="form-field" placeholder="Enter ticker (e.g. AAPL, MSFT, TSLA)" spellcheck="false" autocomplete="off">
-              <button class="btn-primary" id="research-search-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:6px;">
-                  <circle cx="11" cy="11" r="8"/>
-                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                </svg>
-                Search
-              </button>
-            </div>
-          </div>
-
-          <div class="research-loading" id="research-loading" style="display:none;">
-            <div class="research-spinner"></div>
-            <span>Fetching stock data...</span>
-          </div>
-
-          <div class="research-error" id="research-error" style="display:none;"></div>
-
-          <div class="research-results" id="research-results"></div>
-
-        </section>
-
+        </div>
       </div>
+
+      <!-- ==================== MARKETS ==================== -->
+      <div id="page-markets" class="page-section hidden space-y-8 fade-in">
+        <div class="mb-4">
+          <h1 class="text-3xl font-medium text-ivory-100 tracking-tight">Live Markets</h1>
+          <p class="text-sm text-gray-dim mt-2">Real-time prices · <span class="text-status-green/80">updated every 60s</span></p>
+        </div>
+        <div class="grid grid-cols-2 gap-6 flex-1 pb-8">
+          <div id="mk-btc" class="glass-panel rounded-xl p-8 flex flex-col justify-center relative overflow-hidden group transition-colors duration-500">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#F7931A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="text-[14px] uppercase tracking-widest text-gray-muted mb-2">Bitcoin (BTC)</div>
+            <div class="text-[48px] font-medium text-ivory-100 tracking-tight price-val">--</div>
+            <div class="text-[16px] mt-2 font-medium change-val text-gray-dim">--</div>
+          </div>
+          <div id="mk-nvda" class="glass-panel rounded-xl p-8 flex flex-col justify-center relative overflow-hidden group transition-colors duration-500">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#76B900]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="text-[14px] uppercase tracking-widest text-gray-muted mb-2">NVIDIA (NVDA)</div>
+            <div class="text-[48px] font-medium text-ivory-100 tracking-tight price-val">--</div>
+            <div class="text-[16px] mt-2 font-medium change-val text-gray-dim">--</div>
+          </div>
+          <div id="mk-spx" class="glass-panel rounded-xl p-8 flex flex-col justify-center relative overflow-hidden group transition-colors duration-500">
+            <div class="absolute inset-0 bg-gradient-to-br from-status-blue/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="text-[14px] uppercase tracking-widest text-gray-muted mb-2">S&amp;P 500 (SPX)</div>
+            <div class="text-[48px] font-medium text-ivory-100 tracking-tight price-val">--</div>
+            <div class="text-[16px] mt-2 font-medium change-val text-gray-dim">--</div>
+          </div>
+          <div id="mk-gold" class="glass-panel rounded-xl p-8 flex flex-col justify-center relative overflow-hidden group transition-colors duration-500">
+            <div class="absolute inset-0 bg-gradient-to-br from-[#D4AF37]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div class="text-[14px] uppercase tracking-widest text-gray-muted mb-2">Gold (XAU)</div>
+            <div class="text-[48px] font-medium text-ivory-100 tracking-tight price-val">--</div>
+            <div class="text-[16px] mt-2 font-medium change-val text-gray-dim">--</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== RESEARCH ==================== -->
+      <div id="page-research" class="page-section hidden space-y-6 fade-in max-w-5xl mx-auto w-full">
+        <div class="glass-panel rounded-xl p-6 border border-ivory-100/10 focus-within:border-ivory-200/50 transition-colors bg-charcoal-700/80">
+          <div class="flex gap-4">
+            <input type="text" id="research-search-input" placeholder="ENTER TICKER (E.G., AAPL)" class="flex-1 bg-transparent text-2xl uppercase tracking-widest text-ivory-100 placeholder-gray-darker outline-none font-medium">
+            <button id="research-search-btn" class="bg-accent-gradient text-charcoal-900 px-8 py-3 rounded-lg font-medium tracking-wide hover:shadow-glow transition-shadow">Search</button>
+          </div>
+        </div>
+        <div id="research-loading" class="hidden text-center py-12">
+          <div class="w-8 h-8 border-2 border-charcoal-600 border-t-ivory-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-sm text-gray-dim tracking-wider uppercase">Fetching stock data...</p>
+        </div>
+        <div id="research-error" class="hidden glass-panel border-l-4 border-l-status-red p-4 rounded-xl">
+          <p class="text-status-red text-sm"></p>
+        </div>
+        <div id="research-results"></div>
+      </div>
+
     </div>
-  </div>
+  </main>
+
   <script src="prices.js"></script>
   <script src="expenses.js"></script>
   <script src="portfolio.js"></script>
@@ -596,17 +522,3 @@
   <script src="dashboard.js"></script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-

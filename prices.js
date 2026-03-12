@@ -8,13 +8,8 @@
   ];
   var currentProxy = 0;
 
-  function getProxy() {
-    return PROXIES[currentProxy % PROXIES.length];
-  }
-
-  function rotateProxy() {
-    currentProxy++;
-  }
+  function getProxy() { return PROXIES[currentProxy % PROXIES.length]; }
+  function rotateProxy() { currentProxy++; }
 
   function fmtPrice(n, decimals) {
     if (n == null || isNaN(n)) return '--';
@@ -30,44 +25,66 @@
     return sign + pct.toFixed(2) + '%';
   }
 
-  function applyChange(el, pct) {
+  function applyWidgetChange(elId, pct) {
+    var el = document.getElementById(elId);
     if (!el) return;
     el.textContent = fmtChange(pct);
-    el.className = 'widget-change ' + (pct >= 0 ? 'positive' : 'negative');
-  }
-
-  function renderSparkline(containerId, prices) {
-    var el = document.getElementById(containerId);
-    if (!el || !prices || prices.length < 2) return;
-
-    var min = Math.min.apply(null, prices);
-    var max = Math.max.apply(null, prices);
-    var range = max - min || 1;
-    var isUp = prices[prices.length - 1] >= prices[0];
-
-    el.innerHTML = '';
-    var step = Math.max(1, Math.floor(prices.length / 20));
-    for (var i = 0; i < prices.length; i += step) {
-      var pct = ((prices[i] - min) / range) * 100;
-      var bar = document.createElement('span');
-      bar.className = 'spark-bar';
-      bar.style.height = Math.max(10, pct) + '%';
-      bar.style.background = isUp
-        ? 'rgba(34, 211, 167, 0.45)'
-        : 'rgba(240, 70, 90, 0.45)';
-      el.appendChild(bar);
+    if (pct != null && !isNaN(pct)) {
+      el.className = 'px-1.5 py-0.5 rounded text-[10px] font-medium ' +
+        (pct >= 0 ? 'bg-status-green/20 text-status-green' : 'bg-status-red/20 text-status-red');
     }
   }
 
+  // Sparkline chart instances
+  var sparkCharts = {};
+
+  function renderSparkline(canvasId, prices) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas || !prices || prices.length < 2) return;
+
+    var isUp = prices[prices.length - 1] >= prices[0];
+    var color = isUp ? '#8FB87A' : '#C46B6B';
+
+    if (sparkCharts[canvasId]) {
+      sparkCharts[canvasId].data.datasets[0].data = prices;
+      sparkCharts[canvasId].data.datasets[0].borderColor = color;
+      sparkCharts[canvasId].data.labels = prices.map(function (_, i) { return i; });
+      sparkCharts[canvasId].update('none');
+      return;
+    }
+
+    sparkCharts[canvasId] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: prices.map(function (_, i) { return i; }),
+        datasets: [{
+          data: prices,
+          borderColor: color,
+          borderWidth: 1.5,
+          tension: 0.3,
+          pointRadius: 0,
+          fill: false
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: { x: { display: false }, y: { display: false } },
+        layout: { padding: 0 },
+        animation: false
+      }
+    });
+  }
+
   function updateTimestamp() {
-    var el = document.getElementById('last-updated-time');
+    var el = document.getElementById('last-sync-text');
     if (el) {
       var now = new Date();
       el.textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
   }
 
-  // --- Fetch with retry ---
   async function fetchWithRetry(url, retries) {
     retries = retries || 2;
     for (var i = 0; i <= retries; i++) {
@@ -90,12 +107,10 @@
       );
       var price = data.bitcoin.usd;
       var change = data.bitcoin.usd_24h_change;
-      var el = document.getElementById('price-btc');
+      var el = document.getElementById('widget-price-btc');
       if (el) el.textContent = fmtPrice(price, 0);
-      applyChange(document.getElementById('change-btc'), change);
-    } catch (e) {
-      // silent
-    }
+      applyWidgetChange('widget-change-btc', change);
+    } catch (e) { /* silent */ }
   }
 
   async function fetchBTCSpark() {
@@ -104,10 +119,12 @@
         'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7'
       );
       var prices = data.prices.map(function (p) { return p[1]; });
-      renderSparkline('spark-btc', prices);
-    } catch (e) {
-      // silent
-    }
+      // Downsample to ~50 points
+      var step = Math.max(1, Math.floor(prices.length / 50));
+      var sampled = [];
+      for (var i = 0; i < prices.length; i += step) sampled.push(prices[i]);
+      renderSparkline('sparkline-btc', sampled);
+    } catch (e) { /* silent */ }
   }
 
   // --- Yahoo Finance with proxy fallback ---
@@ -115,7 +132,6 @@
     var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
       + encodeURIComponent(symbol) + '?range=5d&interval=1h';
 
-    // Try current proxy, then fallback
     for (var attempt = 0; attempt < PROXIES.length; attempt++) {
       try {
         var url = getProxy() + encodeURIComponent(yahooUrl);
@@ -127,9 +143,7 @@
         var price = meta.regularMarketPrice;
         var prevClose = meta.chartPreviousClose || meta.previousClose;
         var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-        var closes = result.indicators.quote[0].close.filter(function (v) {
-          return v != null;
-        });
+        var closes = result.indicators.quote[0].close.filter(function (v) { return v != null; });
         return { price: price, changePct: changePct, closes: closes };
       } catch (e) {
         rotateProxy();
@@ -141,37 +155,31 @@
   async function fetchNVDA() {
     try {
       var d = await fetchYahoo('NVDA');
-      var el = document.getElementById('price-nvda');
+      var el = document.getElementById('widget-price-nvda');
       if (el) el.textContent = fmtPrice(d.price, 2);
-      applyChange(document.getElementById('change-nvda'), d.changePct);
-      renderSparkline('spark-nvda', d.closes);
-    } catch (e) {
-      // silent
-    }
+      applyWidgetChange('widget-change-nvda', d.changePct);
+      renderSparkline('sparkline-nvda', d.closes);
+    } catch (e) { /* silent */ }
   }
 
   async function fetchSPX() {
     try {
       var d = await fetchYahoo('^GSPC');
-      var el = document.getElementById('price-spx');
+      var el = document.getElementById('widget-price-spx');
       if (el) el.textContent = fmtPrice(d.price, 2);
-      applyChange(document.getElementById('change-spx'), d.changePct);
-      renderSparkline('spark-spx', d.closes);
-    } catch (e) {
-      // silent
-    }
+      applyWidgetChange('widget-change-spx', d.changePct);
+      renderSparkline('sparkline-spx', d.closes);
+    } catch (e) { /* silent */ }
   }
 
   async function fetchGold() {
     try {
       var d = await fetchYahoo('GC=F');
-      var el = document.getElementById('price-gold');
+      var el = document.getElementById('widget-price-gold');
       if (el) el.textContent = fmtPrice(d.price, 2);
-      applyChange(document.getElementById('change-gold'), d.changePct);
-      renderSparkline('spark-gold', d.closes);
-    } catch (e) {
-      // silent
-    }
+      applyWidgetChange('widget-change-gold', d.changePct);
+      renderSparkline('sparkline-gold', d.closes);
+    } catch (e) { /* silent */ }
   }
 
   function fetchAll() {
@@ -186,13 +194,3 @@
   fetchAll();
   setInterval(fetchAll, REFRESH_INTERVAL);
 })();
-
-
-
-
-
-
-
-
-
-
