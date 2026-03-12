@@ -45,7 +45,6 @@
     { symbol: 'AMZN',  name: 'Amazon.com',       qty: 0 }
   ];
 
-  // --- localStorage persistence ---
   function loadHoldings(key, defaults) {
     try {
       var saved = localStorage.getItem(key);
@@ -55,20 +54,16 @@
   }
 
   function saveHoldings(key, holdings) {
-    try {
-      localStorage.setItem(key, JSON.stringify(holdings));
-    } catch (e) { /* ignore */ }
+    try { localStorage.setItem(key, JSON.stringify(holdings)); } catch (e) { /* ignore */ }
   }
 
   var cryptoHoldings = loadHoldings('mm_crypto', DEFAULT_CRYPTO);
   var stockHoldings = loadHoldings('mm_stocks', DEFAULT_STOCKS);
 
-  // --- Price caches ---
-  var cryptoPrices = {};  // id -> { price, change }
-  var stockPrices = {};   // symbol -> { price, change }
-  var cryptoImages = {};  // id -> image URL (fetched from API)
+  var cryptoPrices = {};
+  var stockPrices = {};
+  var cryptoImages = {};
 
-  // --- Formatters ---
   function fmtPrice(n, decimals) {
     if (n == null || isNaN(n)) return '\u2014';
     return '$' + Number(n).toLocaleString('en-US', {
@@ -83,142 +78,13 @@
     return sign + pct.toFixed(2) + '%';
   }
 
-  // --- Generate color for ticker (fallback) ---
   function tickerColor(str) {
     var hash = 0;
     for (var i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     var h = Math.abs(hash) % 360;
-    return 'hsl(' + h + ', 55%, 45%)';
-  }
-
-  // --- Stock logo URL ---
-  function stockLogoUrl(symbol) {
-    return 'https://logo.clearbit.com/' + stockDomain(symbol);
-  }
-
-  function stockDomain(symbol) {
-    var domains = {
-      'AAPL': 'apple.com',
-      'NVDA': 'nvidia.com',
-      'TSLA': 'tesla.com',
-      'GOOGL': 'google.com',
-      'GOOG': 'google.com',
-      'AMZN': 'amazon.com',
-      'MSFT': 'microsoft.com',
-      'META': 'meta.com',
-      'NFLX': 'netflix.com',
-      'AMD': 'amd.com',
-      'INTC': 'intel.com',
-      'DIS': 'disney.com',
-      'PYPL': 'paypal.com',
-      'UBER': 'uber.com',
-      'SHOP': 'shopify.com',
-      'SQ': 'squareup.com',
-      'SPOT': 'spotify.com',
-      'COIN': 'coinbase.com',
-      'BA': 'boeing.com',
-      'JPM': 'jpmorganchase.com',
-      'V': 'visa.com',
-      'MA': 'mastercard.com',
-      'WMT': 'walmart.com',
-      'KO': 'coca-cola.com',
-      'PEP': 'pepsico.com',
-      'JNJ': 'jnj.com',
-      'PG': 'pg.com',
-      'XOM': 'exxonmobil.com',
-      'CVX': 'chevron.com',
-      'UNH': 'unitedhealthgroup.com',
-      'HD': 'homedepot.com',
-      'CRM': 'salesforce.com',
-      'ORCL': 'oracle.com',
-      'ADBE': 'adobe.com',
-      'CSCO': 'cisco.com',
-      'IBM': 'ibm.com',
-      'SPY': 'ssga.com',
-      'QQQ': 'invesco.com'
-    };
-    return domains[symbol.toUpperCase()] || (symbol.toLowerCase() + '.com');
-  }
-
-  // --- Fetch crypto prices + images from CoinGecko ---
-  async function fetchCryptoPrices() {
-    if (cryptoHoldings.length === 0) return;
-    var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
-
-    // Fetch prices AND images in one call using /coins/markets
-    try {
-      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
-        + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
-      var res = await fetch(url);
-      if (!res.ok) throw new Error(res.status);
-      var data = await res.json();
-      for (var i = 0; i < data.length; i++) {
-        var coin = data[i];
-        cryptoPrices[coin.id] = {
-          price: coin.current_price,
-          change: coin.price_change_percentage_24h
-        };
-        // Store image URL from API (always up-to-date)
-        if (coin.image) {
-          cryptoImages[coin.id] = coin.image;
-        }
-      }
-    } catch (e) {
-      // Fallback: try simple price endpoint
-      try {
-        var url2 = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids
-          + '&vs_currencies=usd&include_24hr_change=true';
-        var res2 = await fetch(url2);
-        if (res2.ok) {
-          var data2 = await res2.json();
-          for (var id in data2) {
-            cryptoPrices[id] = {
-              price: data2[id].usd,
-              change: data2[id].usd_24h_change
-            };
-          }
-        }
-      } catch (e2) { /* silent */ }
-    }
-
-    renderCrypto();
-  }
-
-  function getCryptoImage(holding) {
-    // Prefer API-fetched image (always current), then saved image on holding
-    return cryptoImages[holding.id] || holding.image || '';
-  }
-
-  // --- Fetch stock prices from Yahoo Finance via proxy ---
-  async function fetchStockPrices() {
-    var promises = stockHoldings.map(function (h) {
-      return fetchOneStock(h.symbol);
-    });
-    await Promise.allSettled(promises);
-    renderStocks();
-  }
-
-  async function fetchOneStock(symbol) {
-    try {
-      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-        + encodeURIComponent(symbol) + '?range=1d&interval=1d';
-      var data = await fetchViaProxy(yahooUrl);
-      var result = data.chart.result[0];
-      var meta = result.meta;
-      var price = meta.regularMarketPrice;
-      var prevClose = meta.chartPreviousClose || meta.previousClose;
-      var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-      stockPrices[symbol] = { price: price, change: changePct };
-    } catch (e) { /* silent */ }
-  }
-
-  // --- Helpers ---
-  function fallbackLogoDirect(ticker) {
-    return '<div class="asset-logo-gen" style="background:' + tickerColor(ticker) + '">'
-      + escHtml(ticker.substring(0, 3))
-      + '</div>';
+    return 'hsl(' + h + ', 45%, 40%)';
   }
 
   function escHtml(str) {
@@ -231,9 +97,63 @@
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
+  // --- Fetch crypto prices ---
+  async function fetchCryptoPrices() {
+    if (cryptoHoldings.length === 0) return;
+    var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
+    try {
+      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
+        + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
+      var res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      var data = await res.json();
+      for (var i = 0; i < data.length; i++) {
+        var coin = data[i];
+        cryptoPrices[coin.id] = { price: coin.current_price, change: coin.price_change_percentage_24h };
+        if (coin.image) cryptoImages[coin.id] = coin.image;
+      }
+    } catch (e) {
+      try {
+        var url2 = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true';
+        var res2 = await fetch(url2);
+        if (res2.ok) {
+          var data2 = await res2.json();
+          for (var id in data2) {
+            cryptoPrices[id] = { price: data2[id].usd, change: data2[id].usd_24h_change };
+          }
+        }
+      } catch (e2) { /* silent */ }
+    }
+    renderCrypto();
+  }
+
+  function getCryptoImage(holding) {
+    return cryptoImages[holding.id] || holding.image || '';
+  }
+
+  // --- Fetch stock prices ---
+  async function fetchStockPrices() {
+    var promises = stockHoldings.map(function (h) { return fetchOneStock(h.symbol); });
+    await Promise.allSettled(promises);
+    renderStocks();
+  }
+
+  async function fetchOneStock(symbol) {
+    try {
+      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=1d&interval=1d';
+      var data = await fetchViaProxy(yahooUrl);
+      var result = data.chart.result[0];
+      var meta = result.meta;
+      var price = meta.regularMarketPrice;
+      var prevClose = meta.chartPreviousClose || meta.previousClose;
+      var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
+      stockPrices[symbol] = { price: price, change: changePct };
+    } catch (e) { /* silent */ }
+  }
+
   // --- Render functions ---
   function renderCrypto() {
-    var list = document.getElementById('crypto-holdings-list');
+    var list = document.getElementById('crypto-list');
     if (!list) return;
 
     var html = '';
@@ -242,43 +162,37 @@
       var p = cryptoPrices[h.id];
       var price = p ? fmtPrice(p.price, p.price >= 100 ? 2 : 4) : '\u2014';
       var change = p ? fmtChange(p.change) : '\u2014';
-      var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
+      var isUp = p && p.change >= 0;
       var value = (p && h.qty > 0) ? fmtPrice(p.price * h.qty, 2) : price;
+      var numValue = (p && h.qty > 0) ? (p.price * h.qty) : 0;
       var qtyLabel = h.qty > 0 ? h.qty + ' ' + h.ticker : '';
 
       var imgUrl = getCryptoImage(h);
       var logoHtml;
       if (imgUrl) {
-        logoHtml = '<div class="asset-logo">'
-          + '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" width="40" height="40">'
-          + '</div>';
+        logoHtml = '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" class="w-7 h-7 rounded-full" onerror="this.parentNode.innerHTML=\'<div class=\\'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white\\' style=\\'background:' + tickerColor(h.ticker) + '\\'>' + escHtml(h.ticker.substring(0, 3)) + '</div>\'">';
       } else {
-        logoHtml = fallbackLogoDirect(h.ticker);
+        logoHtml = '<div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background:' + tickerColor(h.ticker) + '">' + escHtml(h.ticker.substring(0, 3)) + '</div>';
       }
 
-      html += '<div class="holding-item">'
-        + '<div class="holding-left">'
-        + logoHtml
-        + '<div class="asset-info">'
-        + '<span class="asset-name">' + escHtml(h.name) + '</span>'
-        + '<span class="asset-ticker">' + escHtml(h.ticker)
-        + (qtyLabel ? ' &middot; ' + escHtml(qtyLabel) : '') + '</span>'
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+        + '<div class="flex items-center gap-3">'
+        + '<div class="flex-shrink-0">' + logoHtml + '</div>'
+        + '<div>'
+        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.ticker)
+        + (qtyLabel ? ' · ' + escHtml(qtyLabel) : '') + '</div>'
+        + '</div></div>'
+        + '<div class="flex items-center gap-4">'
+        + '<div class="text-right">'
+        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
-        + '</div>'
-        + '<div class="holding-right">'
-        + '<span class="asset-value">' + value + '</span>'
-        + '<span class="asset-change ' + changeClass + '">' + change + '</span>'
-        + '</div>'
-        + '<button class="remove-holding-btn" data-type="crypto" data-index="' + i + '" title="Remove">&times;</button>'
-        + '</div>';
+        + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="crypto" data-index="' + i + '">'
+        + '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        + '</button></div></div>';
     }
     list.innerHTML = html;
-
-    // Handle broken images — swap to fallback
-    var imgs = list.querySelectorAll('.asset-logo img');
-    for (var k = 0; k < imgs.length; k++) {
-      imgs[k].addEventListener('error', handleImgError);
-    }
 
     var removeBtns = list.querySelectorAll('.remove-holding-btn');
     for (var j = 0; j < removeBtns.length; j++) {
@@ -287,7 +201,7 @@
   }
 
   function renderStocks() {
-    var list = document.getElementById('stock-holdings-list');
+    var list = document.getElementById('stock-list');
     if (!list) return;
 
     var html = '';
@@ -296,38 +210,30 @@
       var p = stockPrices[h.symbol];
       var price = p ? fmtPrice(p.price, 2) : '\u2014';
       var change = p ? fmtChange(p.change) : '\u2014';
-      var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
+      var isUp = p && p.change >= 0;
       var value = (p && h.qty > 0) ? fmtPrice(p.price * h.qty, 2) : price;
+      var numValue = (p && h.qty > 0) ? (p.price * h.qty) : 0;
       var qtyLabel = h.qty > 0 ? h.qty + ' shares' : '';
 
-      var logoUrl = stockLogoUrl(h.symbol);
-      var logoHtml = '<div class="asset-logo">'
-        + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(h.symbol) + '" width="40" height="40">'
-        + '</div>';
-
-      html += '<div class="holding-item">'
-        + '<div class="holding-left">'
-        + logoHtml
-        + '<div class="asset-info">'
-        + '<span class="asset-name">' + escHtml(h.name) + '</span>'
-        + '<span class="asset-ticker">' + escHtml(h.symbol)
-        + (qtyLabel ? ' &middot; ' + escHtml(qtyLabel) : '') + '</span>'
+      var char = h.symbol.charAt(0);
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+        + '<div class="flex items-center gap-3">'
+        + '<div class="w-7 h-7 rounded-full bg-status-blue text-white flex items-center justify-center text-[10px] font-bold">' + escHtml(char) + '</div>'
+        + '<div>'
+        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.symbol)
+        + (qtyLabel ? ' · ' + escHtml(qtyLabel) : '') + '</div>'
+        + '</div></div>'
+        + '<div class="flex items-center gap-4">'
+        + '<div class="text-right">'
+        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
-        + '</div>'
-        + '<div class="holding-right">'
-        + '<span class="asset-value">' + value + '</span>'
-        + '<span class="asset-change ' + changeClass + '">' + change + '</span>'
-        + '</div>'
-        + '<button class="remove-holding-btn" data-type="stock" data-index="' + i + '" title="Remove">&times;</button>'
-        + '</div>';
+        + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="stock" data-index="' + i + '">'
+        + '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        + '</button></div></div>';
     }
     list.innerHTML = html;
-
-    // Handle broken images — swap to fallback
-    var imgs = list.querySelectorAll('.asset-logo img');
-    for (var k = 0; k < imgs.length; k++) {
-      imgs[k].addEventListener('error', handleImgError);
-    }
 
     var removeBtns = list.querySelectorAll('.remove-holding-btn');
     for (var j = 0; j < removeBtns.length; j++) {
@@ -335,20 +241,6 @@
     }
   }
 
-  function handleImgError(e) {
-    var img = e.target;
-    var ticker = img.alt || '???';
-    var wrapper = img.parentNode;
-    var fallback = document.createElement('div');
-    fallback.className = 'asset-logo-gen';
-    fallback.style.background = tickerColor(ticker);
-    fallback.textContent = ticker.substring(0, 3);
-    if (wrapper.parentNode) {
-      wrapper.parentNode.replaceChild(fallback, wrapper);
-    }
-  }
-
-  // --- Add / Remove handlers ---
   function handleRemove(e) {
     var btn = e.currentTarget;
     var type = btn.getAttribute('data-type');
@@ -375,11 +267,12 @@
     if (!btn || !form) return;
 
     btn.addEventListener('click', function () {
-      form.classList.toggle('show');
-      if (form.classList.contains('show')) {
-        form.querySelector('input').focus();
-      }
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) form.querySelector('input').focus();
     });
+
+    var cancelBtn = form.querySelector('.cancel-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { form.classList.add('hidden'); });
 
     var submitBtn = form.querySelector('.btn-primary');
     if (!submitBtn) return;
@@ -397,20 +290,11 @@
 
       if (!id || !ticker) return;
 
-      cryptoHoldings.push({
-        id: id,
-        name: name || ticker,
-        ticker: ticker,
-        qty: qty
-      });
+      cryptoHoldings.push({ id: id, name: name || ticker, ticker: ticker, qty: qty });
       saveHoldings('mm_crypto', cryptoHoldings);
 
-      idInput.value = '';
-      nameInput.value = '';
-      tickerInput.value = '';
-      qtyInput.value = '';
-      form.classList.remove('show');
-
+      idInput.value = ''; nameInput.value = ''; tickerInput.value = ''; qtyInput.value = '';
+      form.classList.add('hidden');
       fetchCryptoPrices();
     });
   }
@@ -422,11 +306,12 @@
     if (!btn || !form) return;
 
     btn.addEventListener('click', function () {
-      form.classList.toggle('show');
-      if (form.classList.contains('show')) {
-        form.querySelector('input').focus();
-      }
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) form.querySelector('input').focus();
     });
+
+    var cancelBtn = form.querySelector('.cancel-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { form.classList.add('hidden'); });
 
     var submitBtn = form.querySelector('.btn-primary');
     if (!submitBtn) return;
@@ -442,25 +327,16 @@
 
       if (!symbol) return;
 
-      stockHoldings.push({
-        symbol: symbol,
-        name: name || symbol,
-        qty: qty
-      });
+      stockHoldings.push({ symbol: symbol, name: name || symbol, qty: qty });
       saveHoldings('mm_stocks', stockHoldings);
 
-      symbolInput.value = '';
-      nameInput.value = '';
-      qtyInput.value = '';
-      form.classList.remove('show');
-
+      symbolInput.value = ''; nameInput.value = ''; qtyInput.value = '';
+      form.classList.add('hidden');
       fetchStockPrices();
     });
   }
 
-  // --- Ondo Global Markets (Tokenized Stocks) ---
-
-  // Known Ondo token contracts on Ethereum mainnet
+  // --- Ondo Global Markets ---
   var ONDO_CONTRACTS = [
     { address: '0x14c3abf95cb9c93a8b82c1cdcb76d72cb87b2d4c', symbol: 'AAPLON', underlying: 'AAPL', name: 'Apple (Tokenized)', decimals: 18 },
     { address: '0x2d1f7226bd1f780af6b9a49dcc0ae00e8df4bdee', symbol: 'NVDAON', underlying: 'NVDA', name: 'NVIDIA (Tokenized)', decimals: 18 },
@@ -471,48 +347,31 @@
 
   var ETH_RPC = 'https://eth.llamarpc.com';
   var walletAddress = '';
-  var walletBalances = {}; // symbol -> { balance, name, underlying, contract }
+  var walletBalances = {};
 
   function loadWalletAddress() {
-    try {
-      var saved = localStorage.getItem('mm_ondo_wallet');
-      if (saved) return saved;
-    } catch (e) { /* ignore */ }
+    try { var saved = localStorage.getItem('mm_ondo_wallet'); if (saved) return saved; } catch (e) { /* ignore */ }
     return '';
   }
 
   function saveWalletAddress(addr) {
-    try {
-      localStorage.setItem('mm_ondo_wallet', addr);
-    } catch (e) { /* ignore */ }
+    try { localStorage.setItem('mm_ondo_wallet', addr); } catch (e) { /* ignore */ }
   }
 
-  function isValidEthAddress(addr) {
-    return /^0x[0-9a-fA-F]{40}$/.test(addr);
-  }
+  function isValidEthAddress(addr) { return /^0x[0-9a-fA-F]{40}$/.test(addr); }
 
-  // Call balanceOf(address) on an ERC-20 contract via eth_call
   async function getTokenBalance(tokenAddress, walletAddr) {
     var data = '0x70a08231' + walletAddr.slice(2).toLowerCase().padStart(64, '0');
     try {
       var res = await fetch(ETH_RPC, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          method: 'eth_call',
-          params: [{ to: tokenAddress, data: data }, 'latest'],
-          id: 1
-        })
+        body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_call', params: [{ to: tokenAddress, data: data }, 'latest'], id: 1 })
       });
       var json = await res.json();
-      if (json.result && json.result !== '0x') {
-        return BigInt(json.result);
-      }
+      if (json.result && json.result !== '0x') return BigInt(json.result);
       return BigInt(0);
-    } catch (e) {
-      return BigInt(0);
-    }
+    } catch (e) { return BigInt(0); }
   }
 
   function formatTokenBalance(rawBalance, decimals) {
@@ -520,8 +379,7 @@
     var divisor = BigInt(10) ** BigInt(decimals);
     var whole = rawBalance / divisor;
     var remainder = rawBalance % divisor;
-    var remainderStr = remainder.toString().padStart(decimals, '0').slice(0, 6);
-    remainderStr = remainderStr.replace(/0+$/, '');
+    var remainderStr = remainder.toString().padStart(decimals, '0').slice(0, 6).replace(/0+$/, '');
     if (remainderStr === '') return Number(whole);
     return parseFloat(whole.toString() + '.' + remainderStr);
   }
@@ -531,7 +389,7 @@
     var holdingsEl = document.getElementById('ondo-wallet-holdings');
 
     statusEl.textContent = 'Scanning wallet for Ondo tokens...';
-    statusEl.className = 'wallet-status scanning';
+    statusEl.className = 'wallet-status scanning text-[11px] mt-2';
     holdingsEl.innerHTML = '';
     walletBalances = {};
 
@@ -542,12 +400,8 @@
       if (balance > 0) {
         foundCount++;
         walletBalances[token.symbol] = {
-          balance: balance,
-          name: token.name,
-          underlying: token.underlying,
-          symbol: token.symbol,
-          contract: token.address,
-          coingeckoId: token.coingeckoId || null
+          balance: balance, name: token.name, underlying: token.underlying,
+          symbol: token.symbol, contract: token.address, coingeckoId: token.coingeckoId || null
         };
       }
     });
@@ -556,10 +410,10 @@
 
     if (foundCount > 0) {
       statusEl.textContent = 'Found ' + foundCount + ' Ondo token' + (foundCount > 1 ? 's' : '') + ' in wallet';
-      statusEl.className = 'wallet-status success';
+      statusEl.className = 'wallet-status success text-[11px] mt-2';
     } else {
       statusEl.textContent = 'No Ondo tokens found in this wallet';
-      statusEl.className = 'wallet-status';
+      statusEl.className = 'wallet-status text-[11px] mt-2 text-gray-dim';
     }
 
     renderWalletHoldings();
@@ -569,53 +423,27 @@
   function renderWalletHoldings() {
     var holdingsEl = document.getElementById('ondo-wallet-holdings');
     if (!holdingsEl) return;
-
     var symbols = Object.keys(walletBalances);
-    if (symbols.length === 0) {
-      holdingsEl.innerHTML = '';
-      return;
-    }
+    if (symbols.length === 0) { holdingsEl.innerHTML = ''; return; }
 
     var html = '';
     for (var i = 0; i < symbols.length; i++) {
       var wb = walletBalances[symbols[i]];
       var priceInfo = ondoPrices[wb.symbol];
       var valueStr = '\u2014';
+      if (priceInfo) valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
 
-      if (priceInfo) {
-        valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
-      }
-
-      var logoHtml;
-      if (wb.underlying) {
-        var logoUrl = stockLogoUrl(wb.underlying);
-        logoHtml = '<div class="asset-logo ondo-asset-logo" style="width:32px;height:32px;">'
-          + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(wb.symbol) + '" width="32" height="32">'
-          + '<span class="ondo-token-badge" style="width:14px;height:14px;font-size:7px;">ON</span>'
-          + '</div>';
-      } else {
-        logoHtml = '<div class="asset-logo-gen" style="background:#0052FF;width:32px;height:32px;font-size:10px;">'
-          + escHtml(wb.symbol.substring(0, 4))
-          + '</div>';
-      }
-
-      html += '<div class="wallet-holding-item">'
-        + '<div class="wallet-holding-left">'
-        + logoHtml
-        + '<div class="wallet-holding-info">'
-        + '<span class="wallet-holding-name">' + escHtml(wb.name) + '<span class="wallet-source-badge">Wallet</span></span>'
-        + '<span class="wallet-holding-balance">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</span>'
-        + '</div>'
-        + '</div>'
-        + '<span class="wallet-holding-value">' + valueStr + '</span>'
+      html += '<div class="flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/30 transition-colors">'
+        + '<div class="flex items-center gap-3">'
+        + '<div class="w-7 h-7 rounded-full bg-status-blue/20 text-status-blue flex items-center justify-center text-[9px] font-bold">' + escHtml(wb.symbol.substring(0, 3)) + '</div>'
+        + '<div>'
+        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(wb.name) + ' <span class="text-[9px] bg-status-blue/20 text-status-blue px-1 rounded">Wallet</span></div>'
+        + '<div class="text-[10px] text-gray-dim">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</div>'
+        + '</div></div>'
+        + '<div class="text-[13px] text-ivory-100 font-medium">' + valueStr + '</div>'
         + '</div>';
     }
     holdingsEl.innerHTML = html;
-
-    var imgs = holdingsEl.querySelectorAll('.asset-logo img');
-    for (var k = 0; k < imgs.length; k++) {
-      imgs[k].addEventListener('error', handleImgError);
-    }
   }
 
   function setupWalletPanel() {
@@ -630,18 +458,14 @@
     walletAddress = loadWalletAddress();
     if (walletAddress) {
       walletInput.value = walletAddress;
-      toggleBtn.classList.add('active');
-      panel.classList.add('show');
+      panel.classList.remove('hidden');
       clearBtn.style.display = '';
       scanWallet(walletAddress);
     }
 
     toggleBtn.addEventListener('click', function () {
-      panel.classList.toggle('show');
-      toggleBtn.classList.toggle('active');
-      if (panel.classList.contains('show') && !walletAddress) {
-        walletInput.focus();
-      }
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden') && !walletAddress) walletInput.focus();
     });
 
     scanBtn.addEventListener('click', function () {
@@ -649,7 +473,7 @@
       if (!isValidEthAddress(addr)) {
         var statusEl = document.getElementById('ondo-wallet-status');
         statusEl.textContent = 'Invalid Ethereum address. Must be 0x followed by 40 hex characters.';
-        statusEl.className = 'wallet-status error';
+        statusEl.className = 'wallet-status error text-[11px] mt-2';
         return;
       }
       walletAddress = addr;
@@ -665,14 +489,11 @@
       walletInput.value = '';
       clearBtn.style.display = 'none';
       document.getElementById('ondo-wallet-status').textContent = '';
-      document.getElementById('ondo-wallet-status').className = 'wallet-status';
       document.getElementById('ondo-wallet-holdings').innerHTML = '';
       renderOndo();
     });
 
-    walletInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') scanBtn.click();
-    });
+    walletInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') scanBtn.click(); });
   }
 
   var DEFAULT_ONDO = [
@@ -689,17 +510,14 @@
   var ondoPrices = {};
 
   async function fetchOndoPrices() {
-    var promises = ondoHoldings.map(function (h) {
-      return fetchOneOndoStock(h);
-    });
+    var promises = ondoHoldings.map(function (h) { return fetchOneOndoStock(h); });
     await Promise.allSettled(promises);
     renderOndo();
   }
 
   async function fetchOneOndoStock(holding) {
     try {
-      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-        + encodeURIComponent(holding.underlying) + '?range=1d&interval=1d';
+      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(holding.underlying) + '?range=1d&interval=1d';
       var data = await fetchViaProxy(yahooUrl);
       var result = data.chart.result[0];
       var meta = result.meta;
@@ -711,7 +529,7 @@
   }
 
   function renderOndo() {
-    var list = document.getElementById('ondo-holdings-list');
+    var list = document.getElementById('ondo-list');
     if (!list) return;
 
     var html = '';
@@ -720,51 +538,41 @@
       var p = ondoPrices[h.symbol];
       var price = p ? fmtPrice(p.price, 2) : '\u2014';
       var change = p ? fmtChange(p.change) : '\u2014';
-      var changeClass = (p && p.change >= 0) ? 'positive' : 'negative';
+      var isUp = p && p.change >= 0;
 
       var totalQty = h.qty || 0;
       var wb = walletBalances[h.symbol];
       if (wb) totalQty += wb.balance;
 
       var value = (p && totalQty > 0) ? fmtPrice(p.price * totalQty, 2) : price;
+      var numValue = (p && totalQty > 0) ? (p.price * totalQty) : 0;
       var qtyLabel = '';
       if (totalQty > 0) {
         qtyLabel = totalQty.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens';
-        if (wb && h.qty > 0) {
-          qtyLabel += ' (manual + wallet)';
-        } else if (wb && h.qty === 0) {
-          qtyLabel += ' (wallet)';
-        }
+        if (wb && h.qty > 0) qtyLabel += ' (manual + wallet)';
+        else if (wb && h.qty === 0) qtyLabel += ' (wallet)';
       }
 
-      var logoUrl = stockLogoUrl(h.underlying);
-      var logoHtml = '<div class="asset-logo ondo-asset-logo">'
-        + '<img src="' + escAttr(logoUrl) + '" alt="' + escAttr(h.symbol) + '" width="40" height="40">'
-        + '<span class="ondo-token-badge">ON</span>'
-        + '</div>';
-
-      html += '<div class="holding-item">'
-        + '<div class="holding-left">'
-        + logoHtml
-        + '<div class="asset-info">'
-        + '<span class="asset-name">' + escHtml(h.name) + '</span>'
-        + '<span class="asset-ticker">' + escHtml(h.symbol)
-        + (qtyLabel ? ' &middot; ' + escHtml(qtyLabel) : '') + '</span>'
+      var char = h.underlying ? h.underlying.charAt(0) : h.symbol.charAt(0);
+      html += '<div class="holding-item flex items-center justify-between p-3 rounded-lg hover:bg-charcoal-700/30 transition-colors group" data-value="' + numValue + '">'
+        + '<div class="flex items-center gap-4">'
+        + '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B3B5C] to-[#3B6B9C] flex items-center justify-center text-ivory-100 text-[10px] font-bold shadow-inner">' + escHtml(char) + '</div>'
+        + '<div>'
+        + '<div class="text-[13px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[11px] text-gray-dim flex items-center gap-2 mt-0.5">'
+        + '<span class="uppercase tracking-widest">' + escHtml(h.symbol) + '</span>'
+        + (qtyLabel ? '<span>·</span><span>' + escHtml(qtyLabel) + '</span>' : '')
+        + '</div></div></div>'
+        + '<div class="flex items-center gap-4">'
+        + '<div class="text-right">'
+        + '<div class="text-[14px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[11px] mt-0.5 ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
-        + '</div>'
-        + '<div class="holding-right">'
-        + '<span class="asset-value">' + value + '</span>'
-        + '<span class="asset-change ' + changeClass + '">' + change + '</span>'
-        + '</div>'
-        + '<button class="remove-holding-btn" data-type="ondo" data-index="' + i + '" title="Remove">&times;</button>'
-        + '</div>';
+        + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="ondo" data-index="' + i + '">'
+        + '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        + '</button></div></div>';
     }
     list.innerHTML = html;
-
-    var imgs = list.querySelectorAll('.asset-logo img');
-    for (var k = 0; k < imgs.length; k++) {
-      imgs[k].addEventListener('error', handleImgError);
-    }
 
     var removeBtns = list.querySelectorAll('.remove-holding-btn');
     for (var j = 0; j < removeBtns.length; j++) {
@@ -778,11 +586,12 @@
     if (!btn || !form) return;
 
     btn.addEventListener('click', function () {
-      form.classList.toggle('show');
-      if (form.classList.contains('show')) {
-        form.querySelector('input').focus();
-      }
+      form.classList.toggle('hidden');
+      if (!form.classList.contains('hidden')) form.querySelector('input').focus();
     });
+
+    var cancelBtn = form.querySelector('.cancel-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { form.classList.add('hidden'); });
 
     var submitBtn = form.querySelector('.btn-primary');
     if (!submitBtn) return;
@@ -799,25 +608,15 @@
       if (!symbol) return;
 
       var underlying = symbol.replace(/ON$/, '');
-
-      ondoHoldings.push({
-        symbol: symbol,
-        underlying: underlying,
-        name: name || symbol,
-        qty: qty
-      });
+      ondoHoldings.push({ symbol: symbol, underlying: underlying, name: name || symbol, qty: qty });
       saveHoldings('mm_ondo', ondoHoldings);
 
-      symbolInput.value = '';
-      nameInput.value = '';
-      qtyInput.value = '';
-      form.classList.remove('show');
-
+      symbolInput.value = ''; nameInput.value = ''; qtyInput.value = '';
+      form.classList.add('hidden');
       fetchOndoPrices();
     });
   }
 
-  // --- Init ---
   function init() {
     renderCrypto();
     renderStocks();
@@ -833,9 +632,7 @@
       fetchCryptoPrices();
       fetchStockPrices();
       fetchOndoPrices();
-      if (walletAddress) {
-        scanWallet(walletAddress);
-      }
+      if (walletAddress) scanWallet(walletAddress);
     }, REFRESH_INTERVAL);
   }
 
@@ -845,10 +642,3 @@
     init();
   }
 })();
-
-
-
-
-
-
-

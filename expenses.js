@@ -4,20 +4,17 @@
   var STORAGE_KEY = 'mm_expenses';
 
   var categories = [
-    { key: 'housing',       label: 'Housing',       color: '#9f7aea' },
-    { key: 'food',          label: 'Food',          color: '#f6c857' },
-    { key: 'transport',     label: 'Transport',     color: '#4d8df5' },
-    { key: 'utilities',     label: 'Utilities',     color: '#22d3a7' },
-    { key: 'entertainment', label: 'Entertainment', color: '#f472b6' },
-    { key: 'health',        label: 'Health',        color: '#2dd4bf' },
-    { key: 'shopping',      label: 'Shopping',      color: '#fb923c' }
+    { key: 'housing',       label: 'Housing',       color: '#C46B6B' },
+    { key: 'food',          label: 'Food',          color: '#C9B57A' },
+    { key: 'transport',     label: 'Transport',     color: '#7A8FA6' },
+    { key: 'utilities',     label: 'Utilities',     color: '#9A85A6' },
+    { key: 'entertainment', label: 'Entertainment', color: '#8FB87A' },
+    { key: 'health',        label: 'Health',        color: '#E8DFC4' },
+    { key: 'shopping',      label: 'Shopping',      color: '#D4C9A8' }
   ];
 
   function loadExpenses() {
-    try {
-      var raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) { /* ignore */ }
+    try { var raw = localStorage.getItem(STORAGE_KEY); if (raw) return JSON.parse(raw); } catch (e) { /* ignore */ }
     return [];
   }
 
@@ -82,10 +79,7 @@
     for (var i = 0; i < data.length; i++) {
       var t = getTotal(data[i]);
       total += t;
-      if (t > highest) {
-        highest = t;
-        highestLabel = data[i].label;
-      }
+      if (t > highest) { highest = t; highestLabel = data[i].label; }
     }
     var avg = data.length > 0 ? Math.round(total / data.length) : 0;
 
@@ -106,20 +100,14 @@
     if (changeEl) {
       if (prevSlice.length > 0) {
         var prevTotal = 0;
-        for (var j = 0; j < prevSlice.length; j++) {
-          prevTotal += getTotal(prevSlice[j]);
-        }
+        for (var j = 0; j < prevSlice.length; j++) prevTotal += getTotal(prevSlice[j]);
         if (prevTotal > 0) {
           var pctChange = ((total - prevTotal) / prevTotal) * 100;
           var sign = pctChange >= 0 ? '+' : '';
-          changeEl.innerHTML = '<span class="' + (pctChange >= 0 ? 'up' : 'down') + '">'
+          changeEl.innerHTML = '<span class="' + (pctChange >= 0 ? 'text-status-red' : 'text-status-green') + '">'
             + sign + pctChange.toFixed(1) + '%</span> vs prev period';
-        } else {
-          changeEl.textContent = '';
-        }
-      } else {
-        changeEl.textContent = '';
-      }
+        } else { changeEl.textContent = ''; }
+      } else { changeEl.textContent = ''; }
     }
 
     var avgSubEl = document.getElementById('exp-avg-sub');
@@ -133,9 +121,15 @@
     var labels = data.map(function (d) { return d.label; });
     var totals = data.map(function (d) { return getTotal(d); });
 
+    // Highlight the last bar
+    var bgColors = totals.map(function (_, i) {
+      return i === totals.length - 1 ? '#E8DFC4' : '#443f44';
+    });
+
     if (barChart) {
       barChart.data.labels = labels;
       barChart.data.datasets[0].data = totals;
+      barChart.data.datasets[0].backgroundColor = bgColors;
       barChart.update();
       return;
     }
@@ -147,18 +141,8 @@
         datasets: [{
           label: 'Total Expenses',
           data: totals,
-          backgroundColor: function (context) {
-            var chart = context.chart;
-            var ctx2 = chart.ctx;
-            var area = chart.chartArea;
-            if (!area) return '#9f7aea';
-            var gradient = ctx2.createLinearGradient(0, area.bottom, 0, area.top);
-            gradient.addColorStop(0, '#9f7aea');
-            gradient.addColorStop(1, '#7c3aed');
-            return gradient;
-          },
-          borderRadius: 8,
-          borderSkipped: false,
+          backgroundColor: bgColors,
+          borderRadius: 4,
           maxBarThickness: 36
         }]
       },
@@ -168,31 +152,26 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#151a2e',
+            backgroundColor: '#1c191d',
+            titleColor: '#C5C0B5',
+            bodyColor: '#F3F0E7',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 13 },
             padding: 12,
             cornerRadius: 10,
-            callbacks: {
-              label: function (context) { return fmtMoney(context.parsed.y); }
-            }
+            callbacks: { label: function (context) { return fmtMoney(context.parsed.y); } }
           }
         },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#505872', font: { size: 12 } }
+            border: { display: false },
+            ticks: { color: '#7A756D', font: { size: 11 } }
           },
           y: {
-            grid: { color: 'rgba(255,255,255,0.04)' },
+            grid: { color: 'rgba(243,240,231,0.05)' },
             border: { display: false },
-            ticks: {
-              color: '#505872',
-              font: { size: 12 },
-              callback: function (value) {
-                return '$' + (value / 1000).toFixed(1) + 'k';
-              }
-            }
+            display: false
           }
         }
       }
@@ -227,19 +206,20 @@
           datasets: [{
             data: catTotals,
             backgroundColor: catColors,
-            borderWidth: 3,
-            borderColor: '#0d1120',
-            hoverOffset: 8
+            borderWidth: 0,
+            hoverOffset: 4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '68%',
+          cutout: '75%',
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#151a2e',
+              backgroundColor: '#1c191d',
+              titleColor: '#C5C0B5',
+              bodyColor: '#F3F0E7',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
@@ -262,11 +242,13 @@
       var grandTotal = catTotals.reduce(function (a, b) { return a + b; }, 0);
       var html = '';
       for (var k = 0; k < categories.length; k++) {
+        if (catTotals[k] <= 0) continue;
         var pct = grandTotal > 0 ? ((catTotals[k] / grandTotal) * 100).toFixed(0) : 0;
-        html += '<div class="exp-legend-item">'
-          + '<span class="exp-legend-dot" style="background:' + catColors[k] + '"></span>'
-          + catLabels[k]
-          + '<span class="exp-legend-value">' + pct + '%</span>'
+        html += '<div class="flex items-center justify-between">'
+          + '<div class="flex items-center gap-2">'
+          + '<div class="w-2 h-2 rounded-full" style="background:' + catColors[k] + '"></div>'
+          + '<span class="text-[11px] text-gray-muted">' + catLabels[k] + '</span></div>'
+          + '<span class="text-[11px] text-ivory-100 font-medium">' + pct + '%</span>'
           + '</div>';
       }
       legendEl.innerHTML = html;
@@ -298,7 +280,7 @@
     if (!list) return;
 
     if (expenses.length === 0) {
-      list.innerHTML = '<p class="text-muted" style="font-size:13px;">No expenses yet. Add one above.</p>';
+      list.innerHTML = '<p class="text-[11px] text-gray-dim">No expenses yet. Add one above.</p>';
       return;
     }
 
@@ -307,23 +289,28 @@
       return b.id - a.id;
     });
 
-    var html = '';
+    var html = '<div class="space-y-1">';
     for (var i = 0; i < sorted.length; i++) {
       var e = sorted[i];
-      html += '<div class="expense-entry-item" data-id="' + e.id + '">'
-        + '<span class="exp-entry-dot" style="background:' + getCategoryColor(e.category) + '"></span>'
-        + '<span class="exp-entry-month">' + formatMonthLabel(e.month) + '</span>'
-        + '<span class="exp-entry-cat">' + getCategoryLabel(e.category) + '</span>'
-        + '<span class="exp-entry-amount">' + fmtMoney(e.amount) + '</span>'
-        + '<button class="exp-entry-del" title="Delete">&times;</button>'
-        + '</div>';
+      html += '<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-id="' + e.id + '">'
+        + '<div class="flex items-center gap-3">'
+        + '<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:' + getCategoryColor(e.category) + '"></div>'
+        + '<span class="text-[12px] text-ivory-100">' + getCategoryLabel(e.category) + '</span>'
+        + '</div>'
+        + '<div class="flex items-center gap-4">'
+        + '<span class="text-[10px] text-gray-dim">' + formatMonthLabel(e.month) + '</span>'
+        + '<span class="text-[12px] text-ivory-100 font-medium w-16 text-right">' + fmtMoney(e.amount) + '</span>'
+        + '<button class="exp-entry-del text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all">'
+        + '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
+        + '</button></div></div>';
     }
+    html += '</div>';
     list.innerHTML = html;
 
     var delBtns = list.querySelectorAll('.exp-entry-del');
     for (var j = 0; j < delBtns.length; j++) {
       delBtns[j].addEventListener('click', function () {
-        var id = parseInt(this.parentElement.getAttribute('data-id'), 10);
+        var id = parseInt(this.closest('[data-id]').getAttribute('data-id'), 10);
         deleteExpense(id);
       });
     }
@@ -387,10 +374,7 @@
       amountInput.focus();
     });
 
-    amountInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') btn.click();
-    });
-
+    amountInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') btn.click(); });
     monthInput.addEventListener('input', function () { this.classList.remove('form-field-error'); });
     catInput.addEventListener('change', function () { this.classList.remove('form-field-error'); });
     amountInput.addEventListener('input', function () { this.classList.remove('form-field-error'); });
@@ -412,9 +396,11 @@
     for (var i = 0; i < tabBtns.length; i++) {
       tabBtns[i].addEventListener('click', function () {
         for (var j = 0; j < tabBtns.length; j++) {
-          tabBtns[j].classList.remove('active');
+          tabBtns[j].classList.remove('text-ivory-200', 'border-b', 'border-ivory-200', 'font-medium');
+          tabBtns[j].classList.add('text-gray-muted');
         }
-        this.classList.add('active');
+        this.classList.remove('text-gray-muted');
+        this.classList.add('text-ivory-200', 'border-b', 'border-ivory-200', 'font-medium');
         render(parseInt(this.getAttribute('data-exp-range'), 10));
       });
     }
@@ -433,14 +419,3 @@
     init();
   }
 })();
-
-
-
-
-
-
-
-
-
-
-

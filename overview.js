@@ -2,13 +2,10 @@
   'use strict';
 
   var SNAPSHOTS_KEY = 'mm_portfolio_snapshots';
-  var viewMode = 'networth'; // 'networth' or 'returns'
+  var viewMode = 'networth';
 
   function loadSnapshots() {
-    try {
-      var raw = localStorage.getItem(SNAPSHOTS_KEY);
-      if (raw) return JSON.parse(raw);
-    } catch (e) { /* ignore */ }
+    try { var raw = localStorage.getItem(SNAPSHOTS_KEY); if (raw) return JSON.parse(raw); } catch (e) { /* ignore */ }
     return [];
   }
 
@@ -23,40 +20,30 @@
     return '$' + Math.round(n).toLocaleString('en-US');
   }
 
-  // --- Read current portfolio value from DOM ---
   function getPortfolioValueFromDOM(listId) {
     var total = 0;
     var list = document.getElementById(listId);
     if (!list) return 0;
-    var items = list.querySelectorAll('.holding-item');
+    var items = list.querySelectorAll('[data-value]');
     for (var j = 0; j < items.length; j++) {
-      var valEl = items[j].querySelector('.asset-value');
-      if (valEl) {
-        var text = valEl.textContent.replace(/[$,\u2014]/g, '');
-        var num = parseFloat(text);
-        if (!isNaN(num)) total += num;
-      }
+      var num = parseFloat(items[j].getAttribute('data-value'));
+      if (!isNaN(num)) total += num;
     }
     return total;
   }
 
   function getCurrentNetWorth() {
     var cash = 0;
-    try {
-      var v = localStorage.getItem('mm_cash');
-      if (v !== null) cash = parseFloat(v) || 0;
-    } catch (e) { /* ignore */ }
-
-    var crypto = getPortfolioValueFromDOM('crypto-holdings-list');
-    var stocks = getPortfolioValueFromDOM('stock-holdings-list');
-    var ondo = getPortfolioValueFromDOM('ondo-holdings-list');
+    try { var v = localStorage.getItem('mm_cash'); if (v !== null) cash = parseFloat(v) || 0; } catch (e) { /* ignore */ }
+    var crypto = getPortfolioValueFromDOM('crypto-list');
+    var stocks = getPortfolioValueFromDOM('stock-list');
+    var ondo = getPortfolioValueFromDOM('ondo-list');
     return cash + crypto + stocks + ondo;
   }
 
   function recordSnapshot() {
     var nw = getCurrentNetWorth();
     if (nw <= 0) return;
-
     var today = new Date().toISOString().slice(0, 10);
     if (snapshots.length > 0 && snapshots[snapshots.length - 1].date === today) {
       snapshots[snapshots.length - 1].value = nw;
@@ -67,16 +54,13 @@
     saveSnapshots(snapshots);
   }
 
-  // --- Chart ---
   var overviewChart = null;
 
   function renderChart() {
     var ctx = document.getElementById('overview-chart');
     if (!ctx) return;
 
-    var heroVal = document.getElementById('chart-hero-value');
-
-    // Always try to record a snapshot
+    var heroVal = document.getElementById('chart-total-display');
     recordSnapshot();
 
     if (snapshots.length < 1) {
@@ -91,10 +75,7 @@
       return monthNames[parseInt(parts[1], 10) - 1] + ' ' + parseInt(parts[2], 10);
     });
 
-    var values;
-    var labelText;
-    var lineColor;
-    var fillColor;
+    var values, labelText, lineColor, fillColor;
 
     if (viewMode === 'returns') {
       var baseVal = snapshots[0].value;
@@ -103,15 +84,15 @@
       });
       var currentReturn = values[values.length - 1];
       labelText = (currentReturn >= 0 ? '+' : '') + currentReturn.toFixed(2) + '%';
-      lineColor = currentReturn >= 0 ? '#22d3a7' : '#f0465a';
-      fillColor = currentReturn >= 0 ? 'rgba(34, 211, 167, 0.08)' : 'rgba(240, 70, 90, 0.08)';
+      lineColor = currentReturn >= 0 ? '#8FB87A' : '#C46B6B';
+      fillColor = currentReturn >= 0 ? 'rgba(143,184,122,0.08)' : 'rgba(196,107,107,0.08)';
     } else {
       values = snapshots.map(function (s) { return s.value; });
       var currentVal = values[values.length - 1];
       labelText = fmtMoney(currentVal);
       var isUp = values.length >= 2 ? values[values.length - 1] >= values[0] : true;
-      lineColor = isUp ? '#22d3a7' : '#f0465a';
-      fillColor = isUp ? 'rgba(34, 211, 167, 0.08)' : 'rgba(240, 70, 90, 0.08)';
+      lineColor = '#E8DFC4';
+      fillColor = 'rgba(232,223,196,0.1)';
     }
 
     if (heroVal) heroVal.textContent = labelText;
@@ -124,9 +105,6 @@
       overviewChart.options.scales.y.ticks.callback = viewMode === 'returns'
         ? function (v) { return v.toFixed(1) + '%'; }
         : function (v) { return v >= 1000 ? '$' + (v / 1000).toFixed(1) + 'k' : '$' + v; };
-      overviewChart.options.plugins.tooltip.callbacks.label = viewMode === 'returns'
-        ? function (c) { return (c.parsed.y >= 0 ? '+' : '') + c.parsed.y.toFixed(2) + '%'; }
-        : function (c) { return fmtMoney(c.parsed.y); };
       overviewChart.update();
       return;
     }
@@ -145,25 +123,25 @@
           pointRadius: values.length > 30 ? 0 : 4,
           pointHoverRadius: 6,
           pointBackgroundColor: lineColor,
-          borderWidth: 2.5
+          pointHoverBackgroundColor: '#E8DFC4',
+          borderWidth: 2
         }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          intersect: false,
-          mode: 'index'
-        },
+        interaction: { intersect: false, mode: 'index' },
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#151a2e',
+            backgroundColor: '#1c191d',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 14, weight: '600' },
+            titleColor: '#C5C0B5',
+            bodyColor: '#F3F0E7',
             padding: 14,
             cornerRadius: 10,
-            borderColor: 'rgba(255,255,255,0.08)',
+            borderColor: 'rgba(243,240,231,0.08)',
             borderWidth: 1,
             callbacks: {
               label: viewMode === 'returns'
@@ -175,13 +153,14 @@
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: '#505872', font: { size: 11 }, maxTicksLimit: 8 }
+            border: { display: false },
+            ticks: { color: '#7A756D', font: { size: 11 }, maxTicksLimit: 8 }
           },
           y: {
-            grid: { color: 'rgba(255,255,255,0.03)' },
+            grid: { color: 'rgba(243,240,231,0.05)' },
             border: { display: false },
             ticks: {
-              color: '#505872',
+              color: '#7A756D',
               font: { size: 11 },
               callback: viewMode === 'returns'
                 ? function (v) { return v.toFixed(1) + '%'; }
@@ -193,7 +172,6 @@
     });
   }
 
-  // --- Allocation donut ---
   var allocChart = null;
 
   function renderAllocationChart() {
@@ -201,19 +179,16 @@
     if (!ctx) return;
 
     var cash = 0;
-    try {
-      var v = localStorage.getItem('mm_cash');
-      if (v !== null) cash = parseFloat(v) || 0;
-    } catch (e) { /* ignore */ }
+    try { var v = localStorage.getItem('mm_cash'); if (v !== null) cash = parseFloat(v) || 0; } catch (e) { /* ignore */ }
 
-    var crypto = getPortfolioValueFromDOM('crypto-holdings-list');
-    var stocks = getPortfolioValueFromDOM('stock-holdings-list');
-    var ondo = getPortfolioValueFromDOM('ondo-holdings-list');
+    var crypto = getPortfolioValueFromDOM('crypto-list');
+    var stocks = getPortfolioValueFromDOM('stock-list');
+    var ondo = getPortfolioValueFromDOM('ondo-list');
     var total = cash + crypto + stocks + ondo;
 
-    var data = [cash, crypto, stocks, ondo];
-    var labels = ['Cash', 'Crypto', 'Stocks', 'Ondo GM'];
-    var colors = ['#4d8df5', '#f6c857', '#9f7aea', '#4d8df5'];
+    var data = [stocks, crypto, ondo, cash];
+    var labels = ['Stocks', 'Crypto', 'Ondo GM', 'Cash'];
+    var colors = ['#7A8FA6', '#8FB87A', '#9A85A6', '#C9B57A'];
 
     if (allocChart) {
       allocChart.data.datasets[0].data = data;
@@ -226,19 +201,20 @@
           datasets: [{
             data: data,
             backgroundColor: colors,
-            borderWidth: 3,
-            borderColor: '#0d1120',
-            hoverOffset: 8
+            borderWidth: 0,
+            hoverOffset: 4
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          cutout: '70%',
+          cutout: '80%',
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#151a2e',
+              backgroundColor: '#1c191d',
+              titleColor: '#C5C0B5',
+              bodyColor: '#F3F0E7',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
@@ -255,29 +231,31 @@
       });
     }
 
-    // Legend
     var legendEl = document.getElementById('allocation-legend');
     if (legendEl) {
       var html = '';
       for (var i = 0; i < labels.length; i++) {
         var pct = total > 0 ? ((data[i] / total) * 100).toFixed(0) : 0;
-        html += '<div class="alloc-legend-item">'
-          + '<span class="alloc-legend-dot" style="background:' + colors[i] + '"></span>'
-          + labels[i]
-          + '<span class="alloc-legend-value">' + pct + '%</span>'
+        html += '<div class="flex items-center justify-between">'
+          + '<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:' + colors[i] + '"></div>'
+          + '<span class="text-[11px] text-gray-muted">' + labels[i] + '</span></div>'
+          + '<span class="text-[11px] text-ivory-100 font-medium">' + pct + '%</span>'
           + '</div>';
       }
       legendEl.innerHTML = html;
     }
   }
 
-  // --- Toggle ---
   function setupToggle() {
     var btns = document.querySelectorAll('[data-overview]');
     for (var i = 0; i < btns.length; i++) {
       btns[i].addEventListener('click', function () {
-        for (var j = 0; j < btns.length; j++) btns[j].classList.remove('active');
-        this.classList.add('active');
+        for (var j = 0; j < btns.length; j++) {
+          btns[j].classList.remove('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
+          btns[j].classList.add('text-gray-muted');
+        }
+        this.classList.remove('text-gray-muted');
+        this.classList.add('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
         viewMode = this.getAttribute('data-overview');
         if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         renderChart();
@@ -292,11 +270,8 @@
 
   function init() {
     setupToggle();
-    // Wait for portfolio prices to load first
     setTimeout(renderAll, 4000);
-    // Also retry after 8s in case proxies were slow
     setTimeout(renderAll, 8000);
-    // Refresh every 15 seconds
     setInterval(renderAll, 15000);
   }
 
@@ -306,6 +281,3 @@
     init();
   }
 })();
-
-
-
