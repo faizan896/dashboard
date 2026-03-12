@@ -90,7 +90,6 @@
       values = snapshots.map(function (s) { return s.value; });
       var currentVal = values[values.length - 1];
       labelText = fmtMoney(currentVal);
-      var isUp = values.length >= 2 ? values[values.length - 1] >= values[0] : true;
       lineColor = '#E8DFC4';
       fillColor = 'rgba(232,223,196,0.1)';
     }
@@ -181,8 +180,8 @@
     var cash = 0;
     try { var v = localStorage.getItem('mm_cash'); if (v !== null) cash = parseFloat(v) || 0; } catch (e) { /* ignore */ }
 
-    var crypto = getPortfolioValueFromDOM('crypto-list');
     var stocks = getPortfolioValueFromDOM('stock-list');
+    var crypto = getPortfolioValueFromDOM('crypto-list');
     var ondo = getPortfolioValueFromDOM('ondo-list');
     var total = cash + crypto + stocks + ondo;
 
@@ -217,67 +216,6 @@
               bodyColor: '#F3F0E7',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
-              padding: 12,
-              cornerRadius: 10,
-              callbacks: {
-                label: function (context) {
-                  var pct = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
-                  return ' $' + Math.round(context.parsed).toLocaleString('en-US') + ' (' + pct + '%)';
-                }
-              }
-            }
-          }
-        }
-      });
-    }
+              padding
 
-    var legendEl = document.getElementById('allocation-legend');
-    if (legendEl) {
-      var html = '';
-      for (var i = 0; i < labels.length; i++) {
-        var pct = total > 0 ? ((data[i] / total) * 100).toFixed(0) : 0;
-        html += '<div class="flex items-center justify-between">'
-          + '<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:' + colors[i] + '"></div>'
-          + '<span class="text-[11px] text-gray-muted">' + labels[i] + '</span></div>'
-          + '<span class="text-[11px] text-ivory-100 font-medium">' + pct + '%</span>'
-          + '</div>';
-      }
-      legendEl.innerHTML = html;
-    }
-  }
 
-  function setupToggle() {
-    var btns = document.querySelectorAll('[data-overview]');
-    for (var i = 0; i < btns.length; i++) {
-      btns[i].addEventListener('click', function () {
-        for (var j = 0; j < btns.length; j++) {
-          btns[j].classList.remove('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
-          btns[j].classList.add('text-gray-muted');
-        }
-        this.classList.remove('text-gray-muted');
-        this.classList.add('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
-        viewMode = this.getAttribute('data-overview');
-        if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
-        renderChart();
-      });
-    }
-  }
-
-  function renderAll() {
-    renderChart();
-    renderAllocationChart();
-  }
-
-  function init() {
-    setupToggle();
-    setTimeout(renderAll, 4000);
-    setTimeout(renderAll, 8000);
-    setInterval(renderAll, 15000);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
