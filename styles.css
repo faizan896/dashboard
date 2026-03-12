@@ -146,3 +146,5 @@ input[type="number"] { -moz-appearance: textfield; }
 
 /* Form field error */
 .form-field-error { border-color: #C46B6B !important; }
+
+
