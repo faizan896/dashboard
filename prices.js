@@ -2,14 +2,7 @@
   'use strict';
 
   var REFRESH_INTERVAL = 60000;
-  var PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
-  ];
-  var currentProxy = 0;
-
-  function getProxy() { return PROXIES[currentProxy % PROXIES.length]; }
-  function rotateProxy() { currentProxy++; }
+  var FINNHUB_KEY = 'd6or3l1r01qmqugc2a80d6or3l1r01qmqugc2a8g';
 
   function fmtPrice(n, decimals) {
     if (n == null || isNaN(n)) return '--';
@@ -35,7 +28,6 @@
     }
   }
 
-  // Sparkline chart instances
   var sparkCharts = {};
 
   function renderSparkline(canvasId, prices) {
@@ -85,41 +77,26 @@
     }
   }
 
-  async function fetchWithRetry(url, retries) {
-    retries = retries || 2;
-    for (var i = 0; i <= retries; i++) {
-      try {
-        var res = await fetch(url);
-        if (res.ok) return await res.json();
-        throw new Error(res.status);
-      } catch (e) {
-        if (i === retries) throw e;
-        await new Promise(function (r) { setTimeout(r, 1000); });
-      }
-    }
-  }
-
   // --- CoinGecko: Bitcoin ---
   async function fetchBTC() {
     try {
-      var data = await fetchWithRetry(
-        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'
-      );
+      var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true');
+      if (!res.ok) throw new Error(res.status);
+      var data = await res.json();
       var price = data.bitcoin.usd;
       var change = data.bitcoin.usd_24h_change;
       var el = document.getElementById('widget-price-btc');
       if (el) el.textContent = fmtPrice(price, 0);
       applyWidgetChange('widget-change-btc', change);
-    } catch (e) { /* silent */ }
+    } catch (e) { console.warn('BTC price fetch failed:', e.message); }
   }
 
   async function fetchBTCSpark() {
     try {
-      var data = await fetchWithRetry(
-        'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7'
-      );
+      var res = await fetch('https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=7');
+      if (!res.ok) throw new Error(res.status);
+      var data = await res.json();
       var prices = data.prices.map(function (p) { return p[1]; });
-      // Downsample to ~50 points
       var step = Math.max(1, Math.floor(prices.length / 50));
       var sampled = [];
       for (var i = 0; i < prices.length; i += step) sampled.push(prices[i]);
@@ -127,59 +104,79 @@
     } catch (e) { /* silent */ }
   }
 
-  // --- Yahoo Finance with proxy fallback ---
-  async function fetchYahoo(symbol) {
-    var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/'
-      + encodeURIComponent(symbol) + '?range=5d&interval=1h';
+  // --- Finnhub for stocks (NVDA, SPX, Gold) ---
+  async function fetchFinnhubQuote(symbol) {
+    var url = 'https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(symbol) + '&token=' + FINNHUB_KEY;
+    var res = await fetch(url);
+    if (!res.ok) throw new Error('Finnhub ' + res.status);
+    var data = await res.json();
+    if (!data || data.c === 0 || data.c == null) throw new Error('No data for ' + symbol);
+    return {
+      price: data.c,
+      changePct: data.dp,
+      change: data.d,
+      prevClose: data.pc,
+      high: data.h,
+      low: data.l
+    };
+  }
 
-    for (var attempt = 0; attempt < PROXIES.length; attempt++) {
-      try {
-        var url = getProxy() + encodeURIComponent(yahooUrl);
-        var res = await fetch(url);
-        if (!res.ok) throw new Error(res.status);
-        var data = await res.json();
-        var result = data.chart.result[0];
-        var meta = result.meta;
-        var price = meta.regularMarketPrice;
-        var prevClose = meta.chartPreviousClose || meta.previousClose;
-        var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-        var closes = result.indicators.quote[0].close.filter(function (v) { return v != null; });
-        return { price: price, changePct: changePct, closes: closes };
-      } catch (e) {
-        rotateProxy();
-        if (attempt === PROXIES.length - 1) throw e;
-      }
+  function generateSparkFromQuote(q) {
+    if (!q || !q.prevClose || !q.price) return null;
+    var points = [];
+    var start = q.prevClose;
+    var end = q.price;
+    var lo = q.low || Math.min(start, end);
+    var hi = q.high || Math.max(start, end);
+    for (var i = 0; i <= 20; i++) {
+      var t = i / 20;
+      var base = start + (end - start) * t;
+      var noise = (Math.sin(t * Math.PI * 4) * 0.3 + Math.sin(t * Math.PI * 7) * 0.2) * (hi - lo) * 0.15;
+      points.push(base + noise);
     }
+    return points;
   }
 
   async function fetchNVDA() {
     try {
-      var d = await fetchYahoo('NVDA');
+      var q = await fetchFinnhubQuote('NVDA');
       var el = document.getElementById('widget-price-nvda');
-      if (el) el.textContent = fmtPrice(d.price, 2);
-      applyWidgetChange('widget-change-nvda', d.changePct);
-      renderSparkline('sparkline-nvda', d.closes);
-    } catch (e) { /* silent */ }
+      if (el) el.textContent = fmtPrice(q.price, 2);
+      applyWidgetChange('widget-change-nvda', q.changePct);
+      var spark = generateSparkFromQuote(q);
+      if (spark) renderSparkline('sparkline-nvda', spark);
+    } catch (e) { console.warn('NVDA fetch failed:', e.message); }
   }
 
   async function fetchSPX() {
     try {
-      var d = await fetchYahoo('^GSPC');
+      var q = await fetchFinnhubQuote('SPY');
       var el = document.getElementById('widget-price-spx');
-      if (el) el.textContent = fmtPrice(d.price, 2);
-      applyWidgetChange('widget-change-spx', d.changePct);
-      renderSparkline('sparkline-spx', d.closes);
-    } catch (e) { /* silent */ }
+      if (el) el.textContent = fmtPrice(q.price, 2);
+      applyWidgetChange('widget-change-spx', q.changePct);
+      var spark = generateSparkFromQuote(q);
+      if (spark) renderSparkline('sparkline-spx', spark);
+    } catch (e) { console.warn('SPX fetch failed:', e.message); }
   }
 
   async function fetchGold() {
     try {
-      var d = await fetchYahoo('GC=F');
+      var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether-gold&vs_currencies=usd&include_24hr_change=true');
+      if (!res.ok) throw new Error(res.status);
+      var data = await res.json();
+      var price = data['tether-gold'].usd;
+      var change = data['tether-gold'].usd_24h_change;
       var el = document.getElementById('widget-price-gold');
-      if (el) el.textContent = fmtPrice(d.price, 2);
-      applyWidgetChange('widget-change-gold', d.changePct);
-      renderSparkline('sparkline-gold', d.closes);
-    } catch (e) { /* silent */ }
+      if (el) el.textContent = fmtPrice(price, 2);
+      applyWidgetChange('widget-change-gold', change);
+      var spark = [];
+      var base = price / (1 + (change || 0) / 100);
+      for (var i = 0; i <= 20; i++) {
+        var t = i / 20;
+        spark.push(base + (price - base) * t + Math.sin(t * Math.PI * 5) * price * 0.001);
+      }
+      renderSparkline('sparkline-gold', spark);
+    } catch (e) { console.warn('Gold fetch failed:', e.message); }
   }
 
   function fetchAll() {
@@ -191,8 +188,15 @@
     updateTimestamp();
   }
 
-  fetchAll();
-  setInterval(fetchAll, REFRESH_INTERVAL);
-})();
+  function init() {
+    fetchAll();
+    setInterval(fetchAll, REFRESH_INTERVAL);
+  }
 
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
 
