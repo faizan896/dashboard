@@ -1,31 +1,9 @@
 (function () {
   'use strict';
 
-  var PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
-  ];
-  var proxyIdx = 0;
+  var FINNHUB_KEY = 'd6or3l1r01qmqugc2a80d6or3l1r01qmqugc2a8g';
   var REFRESH_INTERVAL = 60000;
 
-  function getProxy() { return PROXIES[proxyIdx % PROXIES.length]; }
-  function rotateProxy() { proxyIdx++; }
-
-  async function fetchViaProxy(yahooUrl) {
-    for (var attempt = 0; attempt < PROXIES.length; attempt++) {
-      try {
-        var url = getProxy() + encodeURIComponent(yahooUrl);
-        var res = await fetch(url);
-        if (!res.ok) throw new Error(res.status);
-        return await res.json();
-      } catch (e) {
-        rotateProxy();
-        if (attempt === PROXIES.length - 1) throw e;
-      }
-    }
-  }
-
-  // --- Default holdings ---
   var DEFAULT_CRYPTO = [
     { id: 'bitcoin',  name: 'Bitcoin',  ticker: 'BTC', qty: 0 },
     { id: 'ethereum', name: 'Ethereum', ticker: 'ETH', qty: 0 },
@@ -97,33 +75,38 @@
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  // --- Fetch crypto prices ---
   async function fetchCryptoPrices() {
     if (cryptoHoldings.length === 0) return;
     var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
+
     try {
-      var url = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
-        + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
+      var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true';
       var res = await fetch(url);
       if (!res.ok) throw new Error(res.status);
       var data = await res.json();
-      for (var i = 0; i < data.length; i++) {
-        var coin = data[i];
-        cryptoPrices[coin.id] = { price: coin.current_price, change: coin.price_change_percentage_24h };
-        if (coin.image) cryptoImages[coin.id] = coin.image;
+      for (var id in data) {
+        cryptoPrices[id] = { price: data[id].usd, change: data[id].usd_24h_change };
       }
     } catch (e) {
-      try {
-        var url2 = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true';
-        var res2 = await fetch(url2);
-        if (res2.ok) {
-          var data2 = await res2.json();
-          for (var id in data2) {
-            cryptoPrices[id] = { price: data2[id].usd, change: data2[id].usd_24h_change };
+      console.warn('Crypto price fetch failed:', e.message);
+    }
+
+    try {
+      var url2 = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
+        + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
+      var res2 = await fetch(url2);
+      if (res2.ok) {
+        var data2 = await res2.json();
+        for (var i = 0; i < data2.length; i++) {
+          var coin = data2[i];
+          if (coin.image) cryptoImages[coin.id] = coin.image;
+          if (coin.current_price) {
+            cryptoPrices[coin.id] = { price: coin.current_price, change: coin.price_change_percentage_24h };
           }
         }
-      } catch (e2) { /* silent */ }
-    }
+      }
+    } catch (e2) { /* silent */ }
+
     renderCrypto();
   }
 
@@ -131,7 +114,6 @@
     return cryptoImages[holding.id] || holding.image || '';
   }
 
-  // --- Fetch stock prices ---
   async function fetchStockPrices() {
     var promises = stockHoldings.map(function (h) { return fetchOneStock(h.symbol); });
     await Promise.allSettled(promises);
@@ -140,18 +122,15 @@
 
   async function fetchOneStock(symbol) {
     try {
-      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=1d&interval=1d';
-      var data = await fetchViaProxy(yahooUrl);
-      var result = data.chart.result[0];
-      var meta = result.meta;
-      var price = meta.regularMarketPrice;
-      var prevClose = meta.chartPreviousClose || meta.previousClose;
-      var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-      stockPrices[symbol] = { price: price, change: changePct };
-    } catch (e) { /* silent */ }
+      var url = 'https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(symbol) + '&token=' + FINNHUB_KEY;
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('Finnhub ' + res.status);
+      var data = await res.json();
+      if (!data || data.c === 0 || data.c == null) return;
+      stockPrices[symbol] = { price: data.c, change: data.dp };
+    } catch (e) { console.warn('Stock fetch failed for ' + symbol + ':', e.message); }
   }
 
-  // --- Render functions ---
   function renderCrypto() {
     var list = document.getElementById('crypto-list');
     if (!list) return;
@@ -170,7 +149,7 @@
       var imgUrl = getCryptoImage(h);
       var logoHtml;
       if (imgUrl) {
-        logoHtml = '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" class="w-7 h-7 rounded-full" onerror="this.parentNode.innerHTML=\'<div class=\\'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white\\' style=\\'background:' + tickerColor(h.ticker) + '\\'>' + escHtml(h.ticker.substring(0, 3)) + '</div>\'">';
+        logoHtml = '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" class="w-7 h-7 rounded-full" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<div class=\\\'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white\\\' style=\\\'background:' + tickerColor(h.ticker) + '\\\'>' + escHtml(h.ticker.substring(0, 3)) + '</div>\'">';
       } else {
         logoHtml = '<div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background:' + tickerColor(h.ticker) + '">' + escHtml(h.ticker.substring(0, 3)) + '</div>';
       }
@@ -181,7 +160,7 @@
         + '<div>'
         + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
         + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.ticker)
-        + (qtyLabel ? ' · ' + escHtml(qtyLabel) : '') + '</div>'
+        + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
@@ -222,7 +201,7 @@
         + '<div>'
         + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
         + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.symbol)
-        + (qtyLabel ? ' · ' + escHtml(qtyLabel) : '') + '</div>'
+        + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
@@ -260,7 +239,6 @@
     }
   }
 
-  // --- Add crypto form ---
   function setupAddCrypto() {
     var btn = document.getElementById('add-crypto-btn');
     var form = document.getElementById('add-crypto-form');
@@ -299,7 +277,6 @@
     });
   }
 
-  // --- Add stock form ---
   function setupAddStock() {
     var btn = document.getElementById('add-stock-btn');
     var form = document.getElementById('add-stock-form');
@@ -516,16 +493,15 @@
   }
 
   async function fetchOneOndoStock(holding) {
+    if (!holding.underlying) return;
     try {
-      var yahooUrl = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(holding.underlying) + '?range=1d&interval=1d';
-      var data = await fetchViaProxy(yahooUrl);
-      var result = data.chart.result[0];
-      var meta = result.meta;
-      var price = meta.regularMarketPrice;
-      var prevClose = meta.chartPreviousClose || meta.previousClose;
-      var changePct = prevClose ? ((price - prevClose) / prevClose) * 100 : null;
-      ondoPrices[holding.symbol] = { price: price, change: changePct };
-    } catch (e) { /* silent */ }
+      var url = 'https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(holding.underlying) + '&token=' + FINNHUB_KEY;
+      var res = await fetch(url);
+      if (!res.ok) throw new Error('Finnhub ' + res.status);
+      var data = await res.json();
+      if (!data || data.c === 0 || data.c == null) return;
+      ondoPrices[holding.symbol] = { price: data.c, change: data.dp };
+    } catch (e) { console.warn('Ondo price fetch failed for ' + holding.symbol + ':', e.message); }
   }
 
   function renderOndo() {
@@ -561,7 +537,7 @@
         + '<div class="text-[13px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
         + '<div class="text-[11px] text-gray-dim flex items-center gap-2 mt-0.5">'
         + '<span class="uppercase tracking-widest">' + escHtml(h.symbol) + '</span>'
-        + (qtyLabel ? '<span>·</span><span>' + escHtml(qtyLabel) + '</span>' : '')
+        + (qtyLabel ? '<span>\u00B7</span><span>' + escHtml(qtyLabel) + '</span>' : '')
         + '</div></div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
@@ -642,4 +618,5 @@
     init();
   }
 })();
+
 
