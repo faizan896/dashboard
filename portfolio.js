@@ -43,6 +43,23 @@
   var stockPrices = {};
   var cryptoImages = {};
 
+  // Hardcoded logo URLs for common coins (CoinGecko rate-limits the images endpoint)
+  var COIN_LOGOS = {
+    'bitcoin': 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
+    'ethereum': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
+    'solana': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
+    'cardano': 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
+    'ripple': 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
+    'ondo': 'https://assets.coingecko.com/coins/images/26580/small/ONDO.png',
+    'ondo-us-dollar-yield': 'https://assets.coingecko.com/coins/images/31973/small/USDY.png',
+    'ousg': 'https://assets.coingecko.com/coins/images/31972/small/OUSG.png',
+    'dogecoin': 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',
+    'polkadot': 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
+    'avalanche-2': 'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+    'chainlink': 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png',
+    'uniswap': 'https://assets.coingecko.com/coins/images/12504/small/uni.jpg'
+  };
+
   function fmtPrice(n, decimals) {
     if (n == null || isNaN(n)) return '\u2014';
     return '$' + Number(n).toLocaleString('en-US', {
@@ -116,7 +133,7 @@
   }
 
   function getCryptoImage(holding) {
-    return cryptoImages[holding.id] || holding.image || '';
+    return cryptoImages[holding.id] || COIN_LOGOS[holding.id] || holding.image || '';
   }
 
   // --- Fetch stock prices via Finnhub ---
@@ -154,11 +171,12 @@
       var qtyLabel = h.qty > 0 ? h.qty + ' ' + h.ticker : '';
 
       var imgUrl = getCryptoImage(h);
+      var fallbackDiv = '<div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background:' + tickerColor(h.ticker) + '">' + escHtml(h.ticker.substring(0, 3)) + '</div>';
       var logoHtml;
       if (imgUrl) {
-        logoHtml = '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" class="w-7 h-7 rounded-full" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<div class=\\\'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white\\\' style=\\\'background:' + tickerColor(h.ticker) + '\\\'>' + escHtml(h.ticker.substring(0, 3)) + '</div>\'">';
+        logoHtml = '<img src="' + escAttr(imgUrl) + '" alt="' + escAttr(h.ticker) + '" class="w-7 h-7 rounded-full" onerror="this.outerHTML=this.getAttribute(\'data-fallback\')" data-fallback="' + escAttr(fallbackDiv) + '">';
       } else {
-        logoHtml = '<div class="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style="background:' + tickerColor(h.ticker) + '">' + escHtml(h.ticker.substring(0, 3)) + '</div>';
+        logoHtml = fallbackDiv;
       }
 
       html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'

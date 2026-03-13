@@ -43,7 +43,6 @@
 
   function recordSnapshot() {
     var nw = getCurrentNetWorth();
-    if (nw <= 0) return;
     var today = new Date().toISOString().slice(0, 10);
     if (snapshots.length > 0 && snapshots[snapshots.length - 1].date === today) {
       snapshots[snapshots.length - 1].value = nw;
@@ -65,10 +64,17 @@
 
     // Always show the current net worth even if no snapshots
     var currentNW = getCurrentNetWorth();
-    if (heroVal && snapshots.length < 1) {
-      heroVal.textContent = fmtMoney(currentNW);
+    if (snapshots.length < 1) {
+      if (heroVal) heroVal.textContent = fmtMoney(currentNW);
       if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
       return;
+    }
+    // If only one snapshot, duplicate it so Chart.js can draw a line
+    if (snapshots.length === 1) {
+      var s = snapshots[0];
+      var yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      snapshots.unshift({ date: yesterday.toISOString().slice(0, 10), value: s.value });
     }
 
     var labels = snapshots.map(function (s) {
