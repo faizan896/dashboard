@@ -121,7 +121,6 @@
     var labels = data.map(function (d) { return d.label; });
     var totals = data.map(function (d) { return getTotal(d); });
 
-    // Highlight the last bar
     var bgColors = totals.map(function (_, i) {
       return i === totals.length - 1 ? '#E8DFC4' : '#443f44';
     });
@@ -419,3 +418,5 @@
     init();
   }
 })();
+
+
