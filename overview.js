@@ -63,8 +63,9 @@
     var heroVal = document.getElementById('chart-total-display');
     recordSnapshot();
 
-    if (snapshots.length < 1) {
-      if (heroVal) heroVal.textContent = fmtMoney(getCurrentNetWorth());
+    var currentNW = getCurrentNetWorth();
+    if (heroVal && snapshots.length < 1) {
+      heroVal.textContent = fmtMoney(currentNW);
       if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
       return;
     }
@@ -88,8 +89,7 @@
       fillColor = currentReturn >= 0 ? 'rgba(143,184,122,0.08)' : 'rgba(196,107,107,0.08)';
     } else {
       values = snapshots.map(function (s) { return s.value; });
-      var currentVal = values[values.length - 1];
-      labelText = fmtMoney(currentVal);
+      labelText = fmtMoney(values[values.length - 1]);
       lineColor = '#E8DFC4';
       fillColor = 'rgba(232,223,196,0.1)';
     }
@@ -180,8 +180,8 @@
     var cash = 0;
     try { var v = localStorage.getItem('mm_cash'); if (v !== null) cash = parseFloat(v) || 0; } catch (e) { /* ignore */ }
 
-    var stocks = getPortfolioValueFromDOM('stock-list');
     var crypto = getPortfolioValueFromDOM('crypto-list');
+    var stocks = getPortfolioValueFromDOM('stock-list');
     var ondo = getPortfolioValueFromDOM('ondo-list');
     var total = cash + crypto + stocks + ondo;
 
@@ -216,7 +216,7 @@
               bodyColor: '#F3F0E7',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
-              padding  12,
+              padding: 12,
               cornerRadius: 10,
               callbacks: {
                 label: function (context) {
@@ -269,8 +269,11 @@
 
   function init() {
     setupToggle();
-    setTimeout(renderAll, 4000);
-    setTimeout(renderAll, 8000);
+    renderAll();
+    setTimeout(renderAll, 1000);
+    setTimeout(renderAll, 3000);
+    setTimeout(renderAll, 6000);
+    setTimeout(renderAll, 10000);
     setInterval(renderAll, 15000);
   }
 
