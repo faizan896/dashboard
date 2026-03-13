@@ -63,8 +63,10 @@
     var heroVal = document.getElementById('chart-total-display');
     recordSnapshot();
 
-    if (snapshots.length < 1) {
-      if (heroVal) heroVal.textContent = fmtMoney(getCurrentNetWorth());
+    // Always show the current net worth even if no snapshots
+    var currentNW = getCurrentNetWorth();
+    if (heroVal && snapshots.length < 1) {
+      heroVal.textContent = fmtMoney(currentNW);
       if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
       return;
     }
@@ -88,9 +90,7 @@
       fillColor = currentReturn >= 0 ? 'rgba(143,184,122,0.08)' : 'rgba(196,107,107,0.08)';
     } else {
       values = snapshots.map(function (s) { return s.value; });
-      var currentVal = values[values.length - 1];
-      labelText = fmtMoney(currentVal);
-      var isUp = values.length >= 2 ? values[values.length - 1] >= values[0] : true;
+      labelText = fmtMoney(values[values.length - 1]);
       lineColor = '#E8DFC4';
       fillColor = 'rgba(232,223,196,0.1)';
     }
@@ -270,8 +270,14 @@
 
   function init() {
     setupToggle();
-    setTimeout(renderAll, 4000);
-    setTimeout(renderAll, 8000);
+    // Render immediately with whatever data exists
+    renderAll();
+    // Re-render after prices load (1s, 3s, 6s, 10s to catch all API responses)
+    setTimeout(renderAll, 1000);
+    setTimeout(renderAll, 3000);
+    setTimeout(renderAll, 6000);
+    setTimeout(renderAll, 10000);
+    // Then keep refreshing
     setInterval(renderAll, 15000);
   }
 
