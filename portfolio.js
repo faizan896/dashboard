@@ -45,19 +45,19 @@
 
   // Hardcoded logo URLs for common coins (CoinGecko rate-limits the images endpoint)
   var COIN_LOGOS = {
-    'bitcoin': 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
-    'ethereum': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
-    'solana': 'https://assets.coingecko.com/coins/images/4128/small/solana.png',
-    'cardano': 'https://assets.coingecko.com/coins/images/975/small/cardano.png',
-    'ripple': 'https://assets.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
-    'ondo': 'https://assets.coingecko.com/coins/images/26580/small/ONDO.png',
-    'ondo-us-dollar-yield': 'https://assets.coingecko.com/coins/images/31973/small/USDY.png',
-    'ousg': 'https://assets.coingecko.com/coins/images/31972/small/OUSG.png',
-    'dogecoin': 'https://assets.coingecko.com/coins/images/5/small/dogecoin.png',
-    'polkadot': 'https://assets.coingecko.com/coins/images/12171/small/polkadot.png',
-    'avalanche-2': 'https://assets.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
-    'chainlink': 'https://assets.coingecko.com/coins/images/877/small/chainlink-new-logo.png',
-    'uniswap': 'https://assets.coingecko.com/coins/images/12504/small/uni.jpg'
+    'bitcoin': 'https://coin-images.coingecko.com/coins/images/1/small/bitcoin.png',
+    'ethereum': 'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png',
+    'solana': 'https://coin-images.coingecko.com/coins/images/4128/small/solana.png',
+    'cardano': 'https://coin-images.coingecko.com/coins/images/975/small/cardano.png',
+    'ripple': 'https://coin-images.coingecko.com/coins/images/44/small/xrp-symbol-white-128.png',
+    'ondo': 'https://coin-images.coingecko.com/coins/images/26580/small/ONDO.png',
+    'ondo-us-dollar-yield': 'https://coin-images.coingecko.com/coins/images/31973/small/USDY.png',
+    'ousg': 'https://coin-images.coingecko.com/coins/images/31972/small/OUSG.png',
+    'dogecoin': 'https://coin-images.coingecko.com/coins/images/5/small/dogecoin.png',
+    'polkadot': 'https://coin-images.coingecko.com/coins/images/12171/small/polkadot.png',
+    'avalanche-2': 'https://coin-images.coingecko.com/coins/images/12559/small/Avalanche_Circle_RedWhite_Trans.png',
+    'chainlink': 'https://coin-images.coingecko.com/coins/images/877/small/chainlink-new-logo.png',
+    'uniswap': 'https://coin-images.coingecko.com/coins/images/12504/small/uni.jpg'
   };
 
   function fmtPrice(n, decimals) {
