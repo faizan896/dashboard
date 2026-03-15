@@ -216,7 +216,7 @@
       if (p.exchange) infoRows.push({ label: 'Exchange', value: p.exchange });
       if (p.country) infoRows.push({ label: 'Country', value: p.country });
       if (p.ipo) infoRows.push({ label: 'IPO Date', value: p.ipo });
-      if (p.weburl) infoRows.push({ label: 'Website', value: '<a href="' + p.weburl + '" target="_blank" style="color:#E8DFC4">' + p.weburl + '</a>' });
+      if (p.weburl) infoRows.push({ label: 'Website', value: '<a href="' + p.weburl + '" target="_blank" style="color:#3b82f6">' + p.weburl + '</a>' });
       if (p.phone) infoRows.push({ label: 'Phone', value: p.phone });
       if (infoRows.length > 0) html += buildSection('Company Info', infoRows);
     }

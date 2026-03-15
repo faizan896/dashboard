@@ -80,7 +80,7 @@
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     var h = Math.abs(hash) % 360;
-    return 'hsl(' + h + ', 45%, 40%)';
+    return 'hsl(' + h + ', 50%, 45%)';
   }
 
   function escHtml(str) {
@@ -179,17 +179,17 @@
         logoHtml = fallbackDiv;
       }
 
-      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors group" data-value="' + numValue + '">'
         + '<div class="flex items-center gap-3">'
         + '<div class="flex-shrink-0">' + logoHtml + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.ticker)
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-darker uppercase tracking-wider">' + escHtml(h.ticker)
         + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + value + '</div>'
         + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
         + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="crypto" data-index="' + i + '">'
@@ -221,17 +221,17 @@
       var qtyLabel = h.qty > 0 ? h.qty + ' shares' : '';
 
       var char = h.symbol.charAt(0);
-      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors group" data-value="' + numValue + '">'
         + '<div class="flex items-center gap-3">'
-        + '<div class="w-7 h-7 rounded-full bg-status-blue text-white flex items-center justify-center text-[10px] font-bold">' + escHtml(char) + '</div>'
+        + '<div class="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">' + escHtml(char) + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.symbol)
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-darker uppercase tracking-wider">' + escHtml(h.symbol)
         + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + value + '</div>'
         + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
         + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="stock" data-index="' + i + '">'
@@ -418,7 +418,7 @@
       statusEl.className = 'wallet-status success text-[11px] mt-2';
     } else {
       statusEl.textContent = 'No Ondo tokens found in this wallet';
-      statusEl.className = 'wallet-status text-[11px] mt-2 text-gray-dim';
+      statusEl.className = 'wallet-status text-[11px] mt-2 text-gray-darker';
     }
 
     renderWalletHoldings();
@@ -438,14 +438,14 @@
       var valueStr = '\u2014';
       if (priceInfo) valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
 
-      html += '<div class="flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/30 transition-colors">'
+      html += '<div class="flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors">'
         + '<div class="flex items-center gap-3">'
-        + '<div class="w-7 h-7 rounded-full bg-status-blue/20 text-status-blue flex items-center justify-center text-[9px] font-bold">' + escHtml(wb.symbol.substring(0, 3)) + '</div>'
+        + '<div class="w-7 h-7 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[9px] font-bold">' + escHtml(wb.symbol.substring(0, 3)) + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(wb.name) + ' <span class="text-[9px] bg-status-blue/20 text-status-blue px-1 rounded">Wallet</span></div>'
-        + '<div class="text-[10px] text-gray-dim">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</div>'
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(wb.name) + ' <span class="text-[9px] bg-accent/20 text-accent px-1 rounded">Wallet</span></div>'
+        + '<div class="text-[10px] text-gray-darker">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</div>'
         + '</div></div>'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + valueStr + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + valueStr + '</div>'
         + '</div>';
     }
     holdingsEl.innerHTML = html;
@@ -559,18 +559,18 @@
       }
 
       var char = h.underlying ? h.underlying.charAt(0) : h.symbol.charAt(0);
-      html += '<div class="holding-item flex items-center justify-between p-3 rounded-lg hover:bg-charcoal-700/30 transition-colors group" data-value="' + numValue + '">'
+      html += '<div class="holding-item flex items-center justify-between p-3 rounded-lg hover:bg-dark-700 transition-colors group" data-value="' + numValue + '">'
         + '<div class="flex items-center gap-4">'
-        + '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B3B5C] to-[#3B6B9C] flex items-center justify-center text-ivory-100 text-[10px] font-bold shadow-inner">' + escHtml(char) + '</div>'
+        + '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-accent/80 to-accent-dark flex items-center justify-center text-light-100 text-[10px] font-bold shadow-inner">' + escHtml(char) + '</div>'
         + '<div>'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[11px] text-gray-dim flex items-center gap-2 mt-0.5">'
+        + '<div class="text-[13px] text-light-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[11px] text-gray-darker flex items-center gap-2 mt-0.5">'
         + '<span class="uppercase tracking-widest">' + escHtml(h.symbol) + '</span>'
         + (qtyLabel ? '<span>\u00B7</span><span>' + escHtml(qtyLabel) + '</span>' : '')
         + '</div></div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
-        + '<div class="text-[14px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[14px] text-light-100 font-medium">' + value + '</div>'
         + '<div class="text-[11px] mt-0.5 ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
         + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="ondo" data-index="' + i + '">'

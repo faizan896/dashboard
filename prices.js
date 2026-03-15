@@ -24,7 +24,7 @@
     el.textContent = fmtChange(pct);
     if (pct != null && !isNaN(pct)) {
       el.className = 'px-1.5 py-0.5 rounded text-[10px] font-medium ' +
-        (pct >= 0 ? 'bg-status-green/20 text-status-green' : 'bg-status-red/20 text-status-red');
+        (pct >= 0 ? 'bg-status-green/15 text-status-green' : 'bg-status-red/15 text-status-red');
     }
   }
 
@@ -35,7 +35,7 @@
     if (!canvas || !prices || prices.length < 2) return;
 
     var isUp = prices[prices.length - 1] >= prices[0];
-    var color = isUp ? '#8FB87A' : '#C46B6B';
+    var color = isUp ? '#22c55e' : '#ef4444';
 
     if (sparkCharts[canvasId]) {
       sparkCharts[canvasId].data.datasets[0].data = prices;
@@ -121,7 +121,6 @@
     };
   }
 
-  // Generate synthetic sparkline from quote data
   function generateSparkFromQuote(q) {
     if (!q || !q.prevClose || !q.price) return null;
     var points = [];
@@ -129,7 +128,6 @@
     var end = q.price;
     var lo = q.low || Math.min(start, end);
     var hi = q.high || Math.max(start, end);
-    // Create a realistic-looking intraday path
     for (var i = 0; i <= 20; i++) {
       var t = i / 20;
       var base = start + (end - start) * t;
@@ -151,7 +149,6 @@
   }
 
   async function fetchSPX() {
-    // Finnhub uses ^GSPC or SPY as proxy for S&P 500
     try {
       var q = await fetchFinnhubQuote('SPY');
       var el = document.getElementById('widget-price-spx');
@@ -163,18 +160,15 @@
   }
 
   async function fetchGold() {
-    // Try CoinGecko for gold price (no API key needed)
     try {
       var res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=tether-gold&vs_currencies=usd&include_24hr_change=true');
       if (!res.ok) throw new Error(res.status);
       var data = await res.json();
-      // tether-gold tracks gold price closely
       var price = data['tether-gold'].usd;
       var change = data['tether-gold'].usd_24h_change;
       var el = document.getElementById('widget-price-gold');
       if (el) el.textContent = fmtPrice(price, 2);
       applyWidgetChange('widget-change-gold', change);
-      // Generate simple sparkline
       var spark = [];
       var base = price / (1 + (change || 0) / 100);
       for (var i = 0; i <= 20; i++) {
@@ -194,7 +188,6 @@
     updateTimestamp();
   }
 
-  // Wait for DOM
   function init() {
     fetchAll();
     setInterval(fetchAll, REFRESH_INTERVAL);

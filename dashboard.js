@@ -193,7 +193,7 @@
     function switchPage(pageName) {
       navBtns.forEach(function (b) {
         var isActive = b.getAttribute('data-target') === pageName;
-        b.classList.remove('bg-ivory-200/5', 'text-ivory-200');
+        b.classList.remove('bg-accent/10', 'text-accent-light');
         b.classList.add('text-gray-dim');
         var indicator = b.querySelector('.active-indicator');
         if (indicator) {
@@ -208,7 +208,7 @@
 
         if (isActive) {
           b.classList.remove('text-gray-dim');
-          b.classList.add('bg-ivory-200/5', 'text-ivory-200');
+          b.classList.add('bg-accent/10', 'text-accent-light');
           if (indicator) {
             indicator.classList.remove('opacity-0');
             indicator.classList.add('opacity-100');
@@ -272,7 +272,6 @@
         var changeVal = marketEl.querySelector('.change-val');
         if (changeVal && changeEl.textContent !== '--') {
           changeVal.textContent = changeEl.textContent;
-          // Copy color classes
           var isUp = changeEl.textContent.indexOf('-') !== 0;
           changeVal.className = 'text-[16px] mt-2 font-medium change-val ' + (isUp ? 'text-status-green' : 'text-status-red');
         }
