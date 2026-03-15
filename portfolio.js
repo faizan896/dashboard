@@ -43,7 +43,6 @@
   var stockPrices = {};
   var cryptoImages = {};
 
-  // Hardcoded logo URLs for common coins (CoinGecko rate-limits the images endpoint)
   var COIN_LOGOS = {
     'bitcoin': 'https://assets.coingecko.com/coins/images/1/small/bitcoin.png',
     'ethereum': 'https://assets.coingecko.com/coins/images/279/small/ethereum.png',
@@ -80,7 +79,7 @@
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     var h = Math.abs(hash) % 360;
-    return 'hsl(' + h + ', 45%, 40%)';
+    return 'hsl(' + h + ', 50%, 45%)';
   }
 
   function escHtml(str) {
@@ -98,7 +97,6 @@
     if (cryptoHoldings.length === 0) return;
     var ids = cryptoHoldings.map(function (h) { return h.id; }).join(',');
 
-    // Try /simple/price first (more reliable, less rate-limited)
     try {
       var url = 'https://api.coingecko.com/api/v3/simple/price?ids=' + ids + '&vs_currencies=usd&include_24hr_change=true';
       var res = await fetch(url);
@@ -111,7 +109,6 @@
       console.warn('Crypto price fetch failed:', e.message);
     }
 
-    // Try to get images from /coins/markets (secondary)
     try {
       var url2 = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=' + ids
         + '&per_page=50&page=1&sparkline=false&price_change_percentage=24h';
@@ -121,13 +118,12 @@
         for (var i = 0; i < data2.length; i++) {
           var coin = data2[i];
           if (coin.image) cryptoImages[coin.id] = coin.image;
-          // Update prices if we got them
           if (coin.current_price) {
             cryptoPrices[coin.id] = { price: coin.current_price, change: coin.price_change_percentage_24h };
           }
         }
       }
-    } catch (e2) { /* silent - images are optional */ }
+    } catch (e2) { /* silent */ }
 
     renderCrypto();
   }
@@ -179,17 +175,17 @@
         logoHtml = fallbackDiv;
       }
 
-      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors group" data-value="' + numValue + '">'
         + '<div class="flex items-center gap-3">'
         + '<div class="flex-shrink-0">' + logoHtml + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.ticker)
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-darker uppercase tracking-wider">' + escHtml(h.ticker)
         + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + value + '</div>'
         + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
         + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="crypto" data-index="' + i + '">'
@@ -221,17 +217,17 @@
       var qtyLabel = h.qty > 0 ? h.qty + ' shares' : '';
 
       var char = h.symbol.charAt(0);
-      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-value="' + numValue + '">'
+      html += '<div class="holding-item flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors group" data-value="' + numValue + '">'
         + '<div class="flex items-center gap-3">'
-        + '<div class="w-7 h-7 rounded-full bg-status-blue text-white flex items-center justify-center text-[10px] font-bold">' + escHtml(char) + '</div>'
+        + '<div class="w-7 h-7 rounded-full bg-accent text-white flex items-center justify-center text-[10px] font-bold">' + escHtml(char) + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[10px] text-gray-dim uppercase tracking-wider">' + escHtml(h.symbol)
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(h.name) + '</div>'
+        + '<div class="text-[10px] text-gray-darker uppercase tracking-wider">' + escHtml(h.symbol)
         + (qtyLabel ? ' \u00B7 ' + escHtml(qtyLabel) : '') + '</div>'
         + '</div></div>'
         + '<div class="flex items-center gap-4">'
         + '<div class="text-right">'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + value + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + value + '</div>'
         + '<div class="text-[10px] ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
         + '</div>'
         + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="stock" data-index="' + i + '">'
@@ -418,7 +414,7 @@
       statusEl.className = 'wallet-status success text-[11px] mt-2';
     } else {
       statusEl.textContent = 'No Ondo tokens found in this wallet';
-      statusEl.className = 'wallet-status text-[11px] mt-2 text-gray-dim';
+      statusEl.className = 'wallet-status text-[11px] mt-2 text-gray-darker';
     }
 
     renderWalletHoldings();
@@ -438,14 +434,14 @@
       var valueStr = '\u2014';
       if (priceInfo) valueStr = fmtPrice(priceInfo.price * wb.balance, 2);
 
-      html += '<div class="flex items-center justify-between p-2 rounded-lg hover:bg-charcoal-700/30 transition-colors">'
+      html += '<div class="flex items-center justify-between p-2 rounded-lg hover:bg-dark-700 transition-colors">'
         + '<div class="flex items-center gap-3">'
-        + '<div class="w-7 h-7 rounded-full bg-status-blue/20 text-status-blue flex items-center justify-center text-[9px] font-bold">' + escHtml(wb.symbol.substring(0, 3)) + '</div>'
+        + '<div class="w-7 h-7 rounded-full bg-accent/20 text-accent flex items-center justify-center text-[9px] font-bold">' + escHtml(wb.symbol.substring(0, 3)) + '</div>'
         + '<div>'
-        + '<div class="text-[12px] text-ivory-100 font-medium">' + escHtml(wb.name) + ' <span class="text-[9px] bg-status-blue/20 text-status-blue px-1 rounded">Wallet</span></div>'
-        + '<div class="text-[10px] text-gray-dim">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</div>'
+        + '<div class="text-[12px] text-light-100 font-medium">' + escHtml(wb.name) + ' <span class="text-[9px] bg-accent/20 text-accent px-1 rounded">Wallet</span></div>'
+        + '<div class="text-[10px] text-gray-darker">' + wb.balance.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens</div>'
         + '</div></div>'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + valueStr + '</div>'
+        + '<div class="text-[13px] text-light-100 font-medium">' + valueStr + '</div>'
         + '</div>';
     }
     holdingsEl.innerHTML = html;
@@ -493,160 +489,8 @@
       saveWalletAddress('');
       walletInput.value = '';
       clearBtn.style.display = 'none';
-      document.getElementById('ondo-wallet-status').textContent = '';
-      document.getElementById('ondo-wallet-holdings').innerHTML = '';
-      renderOndo();
-    });
+      document.getElementById('ondo-wallet-status').textContent
 
-    walletInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') scanBtn.click(); });
-  }
-
-  var DEFAULT_ONDO = [
-    { symbol: 'AAPLON',  underlying: 'AAPL',  name: 'Apple (Tokenized)',   qty: 0 },
-    { symbol: 'NVDAON',  underlying: 'NVDA',  name: 'NVIDIA (Tokenized)',  qty: 0 },
-    { symbol: 'TSLAON',  underlying: 'TSLA',  name: 'Tesla (Tokenized)',   qty: 0 },
-    { symbol: 'GOOGLON', underlying: 'GOOGL', name: 'Alphabet (Tokenized)', qty: 0 },
-    { symbol: 'AMZNON',  underlying: 'AMZN',  name: 'Amazon (Tokenized)',  qty: 0 },
-    { symbol: 'SPYON',   underlying: 'SPY',   name: 'S&P 500 ETF (Tokenized)', qty: 0 },
-    { symbol: 'QQQON',   underlying: 'QQQ',   name: 'Nasdaq 100 ETF (Tokenized)', qty: 0 }
-  ];
-
-  var ondoHoldings = loadHoldings('mm_ondo', DEFAULT_ONDO);
-  var ondoPrices = {};
-
-  // Fetch Ondo prices via Finnhub (underlying stock prices)
-  async function fetchOndoPrices() {
-    var promises = ondoHoldings.map(function (h) { return fetchOneOndoStock(h); });
-    await Promise.allSettled(promises);
-    renderOndo();
-  }
-
-  async function fetchOneOndoStock(holding) {
-    if (!holding.underlying) return;
-    try {
-      var url = 'https://finnhub.io/api/v1/quote?symbol=' + encodeURIComponent(holding.underlying) + '&token=' + FINNHUB_KEY;
-      var res = await fetch(url);
-      if (!res.ok) throw new Error('Finnhub ' + res.status);
-      var data = await res.json();
-      if (!data || data.c === 0 || data.c == null) return;
-      ondoPrices[holding.symbol] = { price: data.c, change: data.dp };
-    } catch (e) { console.warn('Ondo price fetch failed for ' + holding.symbol + ':', e.message); }
-  }
-
-  function renderOndo() {
-    var list = document.getElementById('ondo-list');
-    if (!list) return;
-
-    var html = '';
-    for (var i = 0; i < ondoHoldings.length; i++) {
-      var h = ondoHoldings[i];
-      var p = ondoPrices[h.symbol];
-      var price = p ? fmtPrice(p.price, 2) : '\u2014';
-      var change = p ? fmtChange(p.change) : '\u2014';
-      var isUp = p && p.change >= 0;
-
-      var totalQty = h.qty || 0;
-      var wb = walletBalances[h.symbol];
-      if (wb) totalQty += wb.balance;
-
-      var value = (p && totalQty > 0) ? fmtPrice(p.price * totalQty, 2) : price;
-      var numValue = (p && totalQty > 0) ? (p.price * totalQty) : 0;
-      var qtyLabel = '';
-      if (totalQty > 0) {
-        qtyLabel = totalQty.toLocaleString('en-US', { maximumFractionDigits: 6 }) + ' tokens';
-        if (wb && h.qty > 0) qtyLabel += ' (manual + wallet)';
-        else if (wb && h.qty === 0) qtyLabel += ' (wallet)';
-      }
-
-      var char = h.underlying ? h.underlying.charAt(0) : h.symbol.charAt(0);
-      html += '<div class="holding-item flex items-center justify-between p-3 rounded-lg hover:bg-charcoal-700/30 transition-colors group" data-value="' + numValue + '">'
-        + '<div class="flex items-center gap-4">'
-        + '<div class="w-8 h-8 rounded-full bg-gradient-to-br from-[#1B3B5C] to-[#3B6B9C] flex items-center justify-center text-ivory-100 text-[10px] font-bold shadow-inner">' + escHtml(char) + '</div>'
-        + '<div>'
-        + '<div class="text-[13px] text-ivory-100 font-medium">' + escHtml(h.name) + '</div>'
-        + '<div class="text-[11px] text-gray-dim flex items-center gap-2 mt-0.5">'
-        + '<span class="uppercase tracking-widest">' + escHtml(h.symbol) + '</span>'
-        + (qtyLabel ? '<span>\u00B7</span><span>' + escHtml(qtyLabel) + '</span>' : '')
-        + '</div></div></div>'
-        + '<div class="flex items-center gap-4">'
-        + '<div class="text-right">'
-        + '<div class="text-[14px] text-ivory-100 font-medium">' + value + '</div>'
-        + '<div class="text-[11px] mt-0.5 ' + (isUp ? 'text-status-green' : 'text-status-red') + '">' + change + '</div>'
-        + '</div>'
-        + '<button class="remove-holding-btn text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all" data-type="ondo" data-index="' + i + '">'
-        + '<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
-        + '</button></div></div>';
-    }
-    list.innerHTML = html;
-
-    var removeBtns = list.querySelectorAll('.remove-holding-btn');
-    for (var j = 0; j < removeBtns.length; j++) {
-      removeBtns[j].addEventListener('click', handleRemove);
-    }
-  }
-
-  function setupAddOndo() {
-    var btn = document.getElementById('add-ondo-btn');
-    var form = document.getElementById('add-ondo-form');
-    if (!btn || !form) return;
-
-    btn.addEventListener('click', function () {
-      form.classList.toggle('hidden');
-      if (!form.classList.contains('hidden')) form.querySelector('input').focus();
-    });
-
-    var cancelBtn = form.querySelector('.cancel-btn');
-    if (cancelBtn) cancelBtn.addEventListener('click', function () { form.classList.add('hidden'); });
-
-    var submitBtn = form.querySelector('.btn-primary');
-    if (!submitBtn) return;
-
-    submitBtn.addEventListener('click', function () {
-      var symbolInput = form.querySelector('[name="ondo-symbol"]');
-      var nameInput = form.querySelector('[name="ondo-name"]');
-      var qtyInput = form.querySelector('[name="ondo-qty"]');
-
-      var symbol = symbolInput.value.trim().toUpperCase();
-      var name = nameInput.value.trim();
-      var qty = parseFloat(qtyInput.value) || 0;
-
-      if (!symbol) return;
-
-      var underlying = symbol.replace(/ON$/, '');
-      ondoHoldings.push({ symbol: symbol, underlying: underlying, name: name || symbol, qty: qty });
-      saveHoldings('mm_ondo', ondoHoldings);
-
-      symbolInput.value = ''; nameInput.value = ''; qtyInput.value = '';
-      form.classList.add('hidden');
-      fetchOndoPrices();
-    });
-  }
-
-  function init() {
-    renderCrypto();
-    renderStocks();
-    renderOndo();
-    setupAddCrypto();
-    setupAddStock();
-    setupAddOndo();
-    setupWalletPanel();
-    fetchCryptoPrices();
-    fetchStockPrices();
-    fetchOndoPrices();
-    setInterval(function () {
-      fetchCryptoPrices();
-      fetchStockPrices();
-      fetchOndoPrices();
-      if (walletAddress) scanWallet(walletAddress);
-    }, REFRESH_INTERVAL);
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})();
 
 
 
