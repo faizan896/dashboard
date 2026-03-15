@@ -4,13 +4,13 @@
   var STORAGE_KEY = 'mm_expenses';
 
   var categories = [
-    { key: 'housing',       label: 'Housing',       color: '#C46B6B' },
-    { key: 'food',          label: 'Food',          color: '#C9B57A' },
-    { key: 'transport',     label: 'Transport',     color: '#7A8FA6' },
-    { key: 'utilities',     label: 'Utilities',     color: '#9A85A6' },
-    { key: 'entertainment', label: 'Entertainment', color: '#8FB87A' },
-    { key: 'health',        label: 'Health',        color: '#E8DFC4' },
-    { key: 'shopping',      label: 'Shopping',      color: '#D4C9A8' }
+    { key: 'housing',       label: 'Housing',       color: '#ef4444' },
+    { key: 'food',          label: 'Food',          color: '#eab308' },
+    { key: 'transport',     label: 'Transport',     color: '#3b82f6' },
+    { key: 'utilities',     label: 'Utilities',     color: '#a78bfa' },
+    { key: 'entertainment', label: 'Entertainment', color: '#22c55e' },
+    { key: 'health',        label: 'Health',        color: '#06b6d4' },
+    { key: 'shopping',      label: 'Shopping',      color: '#f97316' }
   ];
 
   function loadExpenses() {
@@ -122,7 +122,7 @@
     var totals = data.map(function (d) { return getTotal(d); });
 
     var bgColors = totals.map(function (_, i) {
-      return i === totals.length - 1 ? '#E8DFC4' : '#443f44';
+      return i === totals.length - 1 ? '#3b82f6' : '#27272a';
     });
 
     if (barChart) {
@@ -141,7 +141,7 @@
           label: 'Total Expenses',
           data: totals,
           backgroundColor: bgColors,
-          borderRadius: 4,
+          borderRadius: 6,
           maxBarThickness: 36
         }]
       },
@@ -151,13 +151,15 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1c191d',
-            titleColor: '#C5C0B5',
-            bodyColor: '#F3F0E7',
+            backgroundColor: '#111113',
+            titleColor: '#a1a1aa',
+            bodyColor: '#fafafa',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 13 },
             padding: 12,
-            cornerRadius: 10,
+            cornerRadius: 8,
+            borderColor: '#1e1e22',
+            borderWidth: 1,
             callbacks: { label: function (context) { return fmtMoney(context.parsed.y); } }
           }
         },
@@ -165,10 +167,10 @@
           x: {
             grid: { display: false },
             border: { display: false },
-            ticks: { color: '#7A756D', font: { size: 11 } }
+            ticks: { color: '#71717a', font: { size: 11 } }
           },
           y: {
-            grid: { color: 'rgba(243,240,231,0.05)' },
+            grid: { color: 'rgba(255,255,255,0.04)' },
             border: { display: false },
             display: false
           }
@@ -216,13 +218,15 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1c191d',
-              titleColor: '#C5C0B5',
-              bodyColor: '#F3F0E7',
+              backgroundColor: '#111113',
+              titleColor: '#a1a1aa',
+              bodyColor: '#fafafa',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
-              cornerRadius: 10,
+              cornerRadius: 8,
+              borderColor: '#1e1e22',
+              borderWidth: 1,
               callbacks: {
                 label: function (context) {
                   var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
@@ -247,7 +251,7 @@
           + '<div class="flex items-center gap-2">'
           + '<div class="w-2 h-2 rounded-full" style="background:' + catColors[k] + '"></div>'
           + '<span class="text-[11px] text-gray-muted">' + catLabels[k] + '</span></div>'
-          + '<span class="text-[11px] text-ivory-100 font-medium">' + pct + '%</span>'
+          + '<span class="text-[11px] text-light-100 font-medium">' + pct + '%</span>'
           + '</div>';
       }
       legendEl.innerHTML = html;
@@ -279,7 +283,7 @@
     if (!list) return;
 
     if (expenses.length === 0) {
-      list.innerHTML = '<p class="text-[11px] text-gray-dim">No expenses yet. Add one above.</p>';
+      list.innerHTML = '<p class="text-[11px] text-gray-darker">No expenses yet. Add one above.</p>';
       return;
     }
 
@@ -291,14 +295,14 @@
     var html = '<div class="space-y-1">';
     for (var i = 0; i < sorted.length; i++) {
       var e = sorted[i];
-      html += '<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-charcoal-700/50 transition-colors group" data-id="' + e.id + '">'
+      html += '<div class="flex items-center justify-between p-2.5 rounded-lg hover:bg-dark-700 transition-colors group" data-id="' + e.id + '">'
         + '<div class="flex items-center gap-3">'
         + '<div class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background:' + getCategoryColor(e.category) + '"></div>'
-        + '<span class="text-[12px] text-ivory-100">' + getCategoryLabel(e.category) + '</span>'
+        + '<span class="text-[12px] text-light-100">' + getCategoryLabel(e.category) + '</span>'
         + '</div>'
         + '<div class="flex items-center gap-4">'
-        + '<span class="text-[10px] text-gray-dim">' + formatMonthLabel(e.month) + '</span>'
-        + '<span class="text-[12px] text-ivory-100 font-medium w-16 text-right">' + fmtMoney(e.amount) + '</span>'
+        + '<span class="text-[10px] text-gray-darker">' + formatMonthLabel(e.month) + '</span>'
+        + '<span class="text-[12px] text-light-100 font-medium w-16 text-right">' + fmtMoney(e.amount) + '</span>'
         + '<button class="exp-entry-del text-gray-darker hover:text-status-red opacity-0 group-hover:opacity-100 transition-all">'
         + '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'
         + '</button></div></div>';
@@ -395,11 +399,11 @@
     for (var i = 0; i < tabBtns.length; i++) {
       tabBtns[i].addEventListener('click', function () {
         for (var j = 0; j < tabBtns.length; j++) {
-          tabBtns[j].classList.remove('text-ivory-200', 'border-b', 'border-ivory-200', 'font-medium');
-          tabBtns[j].classList.add('text-gray-muted');
+          tabBtns[j].classList.remove('text-accent', 'border-b', 'border-accent', 'font-medium');
+          tabBtns[j].classList.add('text-gray-dim');
         }
-        this.classList.remove('text-gray-muted');
-        this.classList.add('text-ivory-200', 'border-b', 'border-ivory-200', 'font-medium');
+        this.classList.remove('text-gray-dim');
+        this.classList.add('text-accent', 'border-b', 'border-accent', 'font-medium');
         render(parseInt(this.getAttribute('data-exp-range'), 10));
       });
     }
@@ -418,5 +422,6 @@
     init();
   }
 })();
+
 
 
