@@ -24,7 +24,7 @@
     el.textContent = fmtChange(pct);
     if (pct != null && !isNaN(pct)) {
       el.className = 'px-1.5 py-0.5 rounded text-[10px] font-medium ' +
-        (pct >= 0 ? 'bg-status-green/20 text-status-green' : 'bg-status-red/20 text-status-red');
+        (pct >= 0 ? 'bg-status-green/15 text-status-green' : 'bg-status-red/15 text-status-red');
     }
   }
 
@@ -35,7 +35,7 @@
     if (!canvas || !prices || prices.length < 2) return;
 
     var isUp = prices[prices.length - 1] >= prices[0];
-    var color = isUp ? '#8FB87A' : '#C46B6B';
+    var color = isUp ? '#22c55e' : '#ef4444';
 
     if (sparkCharts[canvasId]) {
       sparkCharts[canvasId].data.datasets[0].data = prices;
@@ -199,4 +199,5 @@
     init();
   }
 })();
+
 
