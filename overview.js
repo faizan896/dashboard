@@ -62,14 +62,12 @@
     var heroVal = document.getElementById('chart-total-display');
     recordSnapshot();
 
-    // Always show the current net worth even if no snapshots
     var currentNW = getCurrentNetWorth();
     if (snapshots.length < 1) {
       if (heroVal) heroVal.textContent = fmtMoney(currentNW);
       if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
       return;
     }
-    // If only one snapshot, duplicate it so Chart.js can draw a line
     if (snapshots.length === 1) {
       var s = snapshots[0];
       var yesterday = new Date();
@@ -92,13 +90,13 @@
       });
       var currentReturn = values[values.length - 1];
       labelText = (currentReturn >= 0 ? '+' : '') + currentReturn.toFixed(2) + '%';
-      lineColor = currentReturn >= 0 ? '#8FB87A' : '#C46B6B';
-      fillColor = currentReturn >= 0 ? 'rgba(143,184,122,0.08)' : 'rgba(196,107,107,0.08)';
+      lineColor = currentReturn >= 0 ? '#22c55e' : '#ef4444';
+      fillColor = currentReturn >= 0 ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
     } else {
       values = snapshots.map(function (s) { return s.value; });
       labelText = fmtMoney(values[values.length - 1]);
-      lineColor = '#E8DFC4';
-      fillColor = 'rgba(232,223,196,0.1)';
+      lineColor = '#3b82f6';
+      fillColor = 'rgba(59,130,246,0.08)';
     }
 
     if (heroVal) heroVal.textContent = labelText;
@@ -129,7 +127,7 @@
           pointRadius: values.length > 30 ? 0 : 4,
           pointHoverRadius: 6,
           pointBackgroundColor: lineColor,
-          pointHoverBackgroundColor: '#E8DFC4',
+          pointHoverBackgroundColor: '#fafafa',
           borderWidth: 2
         }]
       },
@@ -140,14 +138,14 @@
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1c191d',
+            backgroundColor: '#111113',
             titleFont: { size: 13, weight: '600' },
             bodyFont: { size: 14, weight: '600' },
-            titleColor: '#C5C0B5',
-            bodyColor: '#F3F0E7',
+            titleColor: '#a1a1aa',
+            bodyColor: '#fafafa',
             padding: 14,
-            cornerRadius: 10,
-            borderColor: 'rgba(243,240,231,0.08)',
+            cornerRadius: 8,
+            borderColor: '#1e1e22',
             borderWidth: 1,
             callbacks: {
               label: viewMode === 'returns'
@@ -160,13 +158,13 @@
           x: {
             grid: { display: false },
             border: { display: false },
-            ticks: { color: '#7A756D', font: { size: 11 }, maxTicksLimit: 8 }
+            ticks: { color: '#71717a', font: { size: 11 }, maxTicksLimit: 8 }
           },
           y: {
-            grid: { color: 'rgba(243,240,231,0.05)' },
+            grid: { color: 'rgba(255,255,255,0.04)' },
             border: { display: false },
             ticks: {
-              color: '#7A756D',
+              color: '#71717a',
               font: { size: 11 },
               callback: viewMode === 'returns'
                 ? function (v) { return v.toFixed(1) + '%'; }
@@ -194,7 +192,7 @@
 
     var data = [stocks, crypto, ondo, cash];
     var labels = ['Stocks', 'Crypto', 'Ondo GM', 'Cash'];
-    var colors = ['#7A8FA6', '#8FB87A', '#9A85A6', '#C9B57A'];
+    var colors = ['#3b82f6', '#22c55e', '#a78bfa', '#eab308'];
 
     if (allocChart) {
       allocChart.data.datasets[0].data = data;
@@ -218,13 +216,15 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: '#1c191d',
-              titleColor: '#C5C0B5',
-              bodyColor: '#F3F0E7',
+              backgroundColor: '#111113',
+              titleColor: '#a1a1aa',
+              bodyColor: '#fafafa',
               titleFont: { size: 13, weight: '600' },
               bodyFont: { size: 13 },
               padding: 12,
-              cornerRadius: 10,
+              cornerRadius: 8,
+              borderColor: '#1e1e22',
+              borderWidth: 1,
               callbacks: {
                 label: function (context) {
                   var pct = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
@@ -245,7 +245,7 @@
         html += '<div class="flex items-center justify-between">'
           + '<div class="flex items-center gap-2"><div class="w-2 h-2 rounded-full" style="background:' + colors[i] + '"></div>'
           + '<span class="text-[11px] text-gray-muted">' + labels[i] + '</span></div>'
-          + '<span class="text-[11px] text-ivory-100 font-medium">' + pct + '%</span>'
+          + '<span class="text-[11px] text-light-100 font-medium">' + pct + '%</span>'
           + '</div>';
       }
       legendEl.innerHTML = html;
@@ -257,11 +257,11 @@
     for (var i = 0; i < btns.length; i++) {
       btns[i].addEventListener('click', function () {
         for (var j = 0; j < btns.length; j++) {
-          btns[j].classList.remove('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
-          btns[j].classList.add('text-gray-muted');
+          btns[j].classList.remove('bg-accent/15', 'text-accent-light', 'font-medium');
+          btns[j].classList.add('text-gray-dim');
         }
-        this.classList.remove('text-gray-muted');
-        this.classList.add('bg-ivory-200/10', 'text-ivory-200', 'font-medium');
+        this.classList.remove('text-gray-dim');
+        this.classList.add('bg-accent/15', 'text-accent-light', 'font-medium');
         viewMode = this.getAttribute('data-overview');
         if (overviewChart) { overviewChart.destroy(); overviewChart = null; }
         renderChart();
@@ -276,14 +276,11 @@
 
   function init() {
     setupToggle();
-    // Render immediately with whatever data exists
     renderAll();
-    // Re-render after prices load (1s, 3s, 6s, 10s to catch all API responses)
     setTimeout(renderAll, 1000);
     setTimeout(renderAll, 3000);
     setTimeout(renderAll, 6000);
     setTimeout(renderAll, 10000);
-    // Then keep refreshing
     setInterval(renderAll, 15000);
   }
 
